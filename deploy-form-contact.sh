@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# 1️⃣ Point this at your “form‑auto.html” on disk:
-FORM_FILE="form-contact.html"
+###############################################################################
+# 1️⃣  Destination filename (final, post‑injection)
+###############################################################################
+FORM_FILE="form-contact-with-script.html"
 
-# 2️⃣ Download the latest full‑source form in place
+###############################################################################
+# 2️⃣  Download the latest raw Jotform source
+###############################################################################
 curl -Ls 'https://hipaa.jotform.com/251305644776158?source=full' -o "$FORM_FILE"
 
-# 3️⃣ Inject your testSubmitFunction just before </body>
-#    We use a temp file to avoid clobbering in mid‑stream.
+###############################################################################
+# 3️⃣  Inject testSubmitFunction() just before </body>
+###############################################################################
 TMP_FILE="$(mktemp)"
-perl -pe '
-  if (m{</body>}) {
-    print qq{
+perl -0777 -pe '
+  s{</body>}{
 <script>
 
       // This was autoupdated
@@ -72,19 +76,15 @@ perl -pe '
       return true;
     }
   </script>
-};
-  }
-' "$FORM_FILE" > "$TMP_FILE" && mv "$TMP_FILE" "$FORM_FILE"
+</body>}i' "$FORM_FILE" > "$TMP_FILE" && mv "$TMP_FILE" "$FORM_FILE"
 
-# 4️⃣ Commit & push if anything changed
+###############################################################################
+# 4️⃣  Commit & push (rebasing to avoid non‑fast‑forward errors)
+###############################################################################
 git add "$FORM_FILE"
 if ! git diff --cached --quiet; then
-  git commit -m "chore: auto‑update form-auto.html $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-
-  # Pull remote changes first to avoid non-fast-forward error
+  git commit -m "chore: auto‑update $FORM_FILE $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
   git pull --rebase origin main
-
-  # Now push updated branch
   git push origin main
 else
   echo "✅ $FORM_FILE is already up to date."
