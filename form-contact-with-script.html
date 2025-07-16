@@ -2292,13 +2292,16 @@ function testSubmitFunction() {
   const emojiRE = /(👂🏻|👃🏻|🗣️)/gu;
   const serviceLine = document.getElementById("input_6")?.value || "";
   const serviceLineCleaned = serviceLine.replace(emojiRE,'').trim();
-
+  const appointmentDateTime =
+        document.getElementById('input_101')?.value ||
+        window.selectedAppointment || '';
+  	console.log('🗓️ appointment_date_time:', appointmentDateTime);
+	
   const data = {
     location:                document.getElementById("input_89")?.value || "",
     provider:                document.getElementById("input_90")?.value || "",
-    appointment_date_time: document.getElementById('input_101')?.value
-                           || window.selectedAppointment        // ⬅️ fallback
-                           || '',    serviceLine:             serviceLineCleaned,
+    appointment_date_time: appointmentDateTime,          // ← uses the variable
+    serviceLine:             serviceLineCleaned,
     condition:               document.getElementById("input_48")?.value || "",
     urgent:                  document.getElementById("input_58")?.value || "",
     extra_services:          document.getElementById("input_57")?.value || "",
