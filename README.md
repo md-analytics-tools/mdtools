@@ -1,1 +1,1 @@
-# analytics
+Please flush your queue.
