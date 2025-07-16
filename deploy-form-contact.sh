@@ -2,12 +2,12 @@
 set -euo pipefail
 
 ###############################################################################
-# 1️⃣  Destination filename (final, post-injection)
+# 1️⃣  Destination filename
 ###############################################################################
 FORM_FILE="form-contact-with-script.html"
 
 ###############################################################################
-# 2️⃣  Always rebase on latest remote before doing anything
+# 2️⃣  Always rebase on latest remote BEFORE changing anything
 ###############################################################################
 git fetch origin
 git rebase origin/main
@@ -18,13 +18,14 @@ git rebase origin/main
 curl -Ls 'https://hipaa.jotform.com/251305644776158?source=full' -o "$FORM_FILE"
 
 ###############################################################################
-# 4️⃣  Inject testSubmitFunction() just before </body>
+# 4️⃣  Inject function just before </body> with date/time stamp
 ###############################################################################
 TMP_FILE="$(mktemp)"
 perl -0777 -pe '
   s{</body>}{
 <script>
-// ----- auto‑inserted $(date -u +"%Y-%m-%dT%H:%M:%SZ") -----
+// This was auto‑updated on '"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'
+
 function testSubmitFunction() {
   const emojiRE = /(👂🏻|👃🏻|🗣️)/gu;
   const serviceLine = document.getElementById("input_6")?.value || "";
