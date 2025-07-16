@@ -77,10 +77,14 @@ perl -pe '
 ' "$FORM_FILE" > "$TMP_FILE" && mv "$TMP_FILE" "$FORM_FILE"
 
 # 4️⃣ Commit & push if anything changed
-# ── 4) commit & push if there was any change ────────────────────────────
 git add "$FORM_FILE"
 if ! git diff --cached --quiet; then
   git commit -m "chore: auto‑update form-auto.html $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+  # Pull remote changes first to avoid non-fast-forward error
+  git pull --rebase origin main
+
+  # Now push updated branch
   git push origin main
 else
   echo "✅ $FORM_FILE is already up to date."
