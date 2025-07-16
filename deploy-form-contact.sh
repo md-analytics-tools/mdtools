@@ -18,38 +18,31 @@ perl -0777 -pe '
       // This was auto-updated on '"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'
     
 
+      (function () {
+        const FIELD_ID = 'input_101';          // appointment field
 
-    /* ────────────────────────────────────────────────────────
-       Listen for an appointmentSelected (or debugFill) message
-       and push the slot text into input_101 so Jotform treats
-       it like normal user input.
-    ────────────────────────────────────────────────────────── */
-    (function () {
-      const FIELD_ID = 'input_101';              // appointment field
+        window.addEventListener('message', (evt) => {
+          if (!evt?.data) return;
 
-      window.addEventListener('message', (evt) => {
-        if (!evt?.data) return;
+          let slotText = null;
+          if (evt.data.type === 'appointmentSelected' && evt.data.data) {
+            /* parent sends { type:'appointmentSelected', data:{label,start,…} } */
+            slotText = evt.data.data.label ?? evt.data.data.start;
+          } else if (evt.data.type === 'debugFill') {
+            slotText = evt.data.slot;
+          }
+          if (!slotText) return;               // nothing useful
 
-        // Accept either our production or console‑debug messages
-        let slotText = null;
-        if (evt.data.type === 'appointmentSelected' && evt.data.data) {
-          // parent sends {type:'appointmentSelected', data:{label:'…', start:'…'}}
-          slotText = evt.data.data.label ?? evt.data.data.start;
-        } else if (evt.data.type === 'debugFill') {
-          slotText = evt.data.slot;
-        }
-        if (!slotText) return;                   // nothing useful
+          const el = document.getElementById(FIELD_ID);
+          if (!el) { console.warn(`[slot‑listener] ${FIELD_ID} not found`); return; }
 
-        const el = document.getElementById(FIELD_ID);
-        if (!el) { console.warn(`[slot‑listener] ${FIELD_ID} not found`); return; }
+          el.value = slotText;
+          ['input', 'change', 'blur'].forEach(ev =>
+            el.dispatchEvent(new Event(ev, { bubbles: true })));
 
-        el.value = slotText;
-        ['input', 'change', 'blur'].forEach(ev =>
-          el.dispatchEvent(new Event(ev, { bubbles: true })));
-
-        console.log(`[slot‑listener] Filled ${FIELD_ID} with “${slotText}”`);
-      }, false);
-    })();
+          console.log(`[slot‑listener] Filled ${FIELD_ID} with “${slotText}”`);
+        }, false);
+      })();
     
       function testSubmitFunction() {
       // Gather field values from the form
