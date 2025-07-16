@@ -2259,9 +2259,11 @@ JotForm.paymentExtrasOnTheFly([null,{"name":"email_appointment","qid":"1","subLa
 <script>
 /* slot listener */
 (function () {
-  const FIELD_ID = 'input_101';
-  window.addEventListener('message', (evt) => {
+  const FIELD_ID = 'input_101';                         // ← string
+
+  window.addEventListener('message', (evt) => {         // ← 'message'
     if (!evt?.data) return;
+
     let slotText = null;
     if (evt.data.type === 'appointmentSelected' && evt.data.data) {
       slotText = evt.data.data.label ?? evt.data.data.start;
@@ -2269,12 +2271,15 @@ JotForm.paymentExtrasOnTheFly([null,{"name":"email_appointment","qid":"1","subLa
       slotText = evt.data.slot;
     }
     if (!slotText) return;
+
     const el = document.getElementById(FIELD_ID);
-    if (!el) return console.warn(`[slot‑listener]  not found`);
+    if (!el) return console.warn(`[slot‑listener] ${FIELD_ID} not found`);
+
     el.value = slotText;
-    ['input','change','blur'].forEach(ev =>
-      el.dispatchEvent(new Event(ev,{bubbles:true})));
-    console.log(`[slot‑listener] Filled  with “”`);
+    ['input','change','blur'].forEach(ev =>                // ← ['input',…]
+      el.dispatchEvent(new Event(ev, { bubbles:true })));
+
+    console.log(`[slot‑listener] Filled ${FIELD_ID} with “${slotText}”`);
   }, false);
 })();
 
