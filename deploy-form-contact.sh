@@ -2,29 +2,21 @@
 set -euo pipefail
 
 ###############################################################################
-# 1️⃣  Destination filename
+# 1️⃣ Download the latest Jotform source → form-contact.html
 ###############################################################################
-FORM_FILE="form-contact-with-script.html"
+FORM_SOURCE_FILE="form-contact.html"
+FORM_OUTPUT_FILE="form-contact-with-script.html"
+
+curl -Ls 'https://hipaa.jotform.com/251305644776158?source=full' -o "$FORM_SOURCE_FILE"
 
 ###############################################################################
-# 2️⃣  Always rebase on latest remote BEFORE changing anything
-###############################################################################
-git fetch origin
-git rebase origin/main
-
-###############################################################################
-# 3️⃣  Download latest Jotform source
-###############################################################################
-curl -Ls 'https://hipaa.jotform.com/251305644776158?source=full' -o "$FORM_FILE"
-
-###############################################################################
-# 4️⃣  Inject function just before </body> with date/time stamp
+# 2️⃣ Inject testSubmitFunction() → form-contact-with-script.html
 ###############################################################################
 TMP_FILE="$(mktemp)"
 perl -0777 -pe '
   s{</body>}{
 <script>
-// This was auto‑updated on '"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'
+// This was auto-updated on '"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'
 
 function testSubmitFunction() {
   const emojiRE = /(👂🏻|👃🏻|🗣️)/gu;
@@ -49,15 +41,22 @@ function testSubmitFunction() {
   return true;
 }
 </script>
-</body>}i' "$FORM_FILE" > "$TMP_FILE" && mv "$TMP_FILE" "$FORM_FILE"
+</body>}i' "$FORM_SOURCE_FILE" > "$TMP_FILE" && mv "$TMP_FILE" "$FORM_OUTPUT_FILE"
+
+echo "✅ Injection complete: $FORM_OUTPUT_FILE generated."
 
 ###############################################################################
-# 5️⃣  Commit & push if there are changes
+# 3️⃣ Git: commit and push only the modified file
 ###############################################################################
-git add "$FORM_FILE"
+git add "$FORM_OUTPUT_FILE"
 if ! git diff --cached --quiet; then
-  git commit -m "chore: auto‑update $FORM_FILE $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+  git commit -m "chore: auto-update $FORM_OUTPUT_FILE $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+  
+  echo "✅ Committed changes, pulling latest from remote..."
+  git pull --rebase origin main
+  
+  echo "✅ Pushing to remote..."
   git push origin main
 else
-  echo "✅ $FORM_FILE is already up to date."
+  echo "✅ $FORM_OUTPUT_FILE is already up to date. No commit needed."
 fi
