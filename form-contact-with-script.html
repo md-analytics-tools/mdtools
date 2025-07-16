@@ -2257,29 +2257,33 @@ JotForm.paymentExtrasOnTheFly([null,{"name":"email_appointment","qid":"1","subLa
   </script>
 </form><!-- 🧩 auto‑inserted mdtools block -->
 <script>
-/* slot listener */
+/* make a shared namespace on window */
+window.selectedAppointment = '';   // default empty string
+
+/* ───── slot listener ────────────────────────────────────────────── */
 (function () {
-  const FIELD_ID = 'input_101';                         // ← string
+  const FIELD_ID = 'input_101';
 
-  window.addEventListener('message', (evt) => {         // ← 'message'
-    if (!evt?.data) return;
-
+  window.addEventListener('message', (evt) => {
     let slotText = null;
-    if (evt.data.type === 'appointmentSelected' && evt.data.data) {
+
+    if (evt?.data?.type === 'appointmentSelected' && evt.data.data) {
       slotText = evt.data.data.label ?? evt.data.data.start;
-    } else if (evt.data.type === 'debugFill') {
+    } else if (evt?.data?.type === 'debugFill') {
       slotText = evt.data.slot;
     }
     if (!slotText) return;
 
+    /* 1️⃣  Put it in the form field so Jotform sees it */
     const el = document.getElementById(FIELD_ID);
-    if (!el) return console.warn(`[slot‑listener] ${FIELD_ID} not found`);
+    if (el) {
+      el.value = slotText;
+      ['input','change','blur'].forEach(ev =>
+        el.dispatchEvent(new Event(ev, { bubbles:true })));
+    }
 
-    el.value = slotText;
-    ['input','change','blur'].forEach(ev =>                // ← ['input',…]
-      el.dispatchEvent(new Event(ev, { bubbles:true })));
-
-    console.log(`[slot‑listener] Filled ${FIELD_ID} with “${slotText}”`);
+    /* 2️⃣  Keep an extra copy for testSubmitFunction() */
+    window.selectedAppointment = slotText;
   }, false);
 })();
 
