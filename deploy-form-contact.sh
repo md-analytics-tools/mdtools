@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+#test to see if active
 ###############################################################################
 # 1️⃣ Download the latest Jotform source → form-contact.html
 ###############################################################################
