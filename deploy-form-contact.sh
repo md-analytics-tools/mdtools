@@ -12,6 +12,43 @@ TMP_FILE="$(mktemp)"
 perl -0777 -pe '
   s{</body>}{
 <script>
+/* ────────────────────────────────────────────────────────
+   Listen for an appointmentSelected (or debugFill) message
+   and push the slot text into input_101 so Jotform treats
+   it like normal user input.
+────────────────────────────────────────────────────────── */
+(function () {
+  const FIELD_ID = 'input_101';              // appointment field
+
+  window.addEventListener('message', (evt) => {
+    if (!evt?.data) return;
+
+    // Accept either our production or console‑debug messages
+    let slotText = null;
+    if (evt.data.type === 'appointmentSelected' && evt.data.data) {
+      // parent sends {type:'appointmentSelected', data:{label:'…', start:'…'}}
+      slotText = evt.data.data.label ?? evt.data.data.start;
+    } else if (evt.data.type === 'debugFill') {
+      slotText = evt.data.slot;
+    }
+    if (!slotText) return;                   // nothing useful
+
+    const el = document.getElementById(FIELD_ID);
+    if (!el) { console.warn(`[slot‑listener] ${FIELD_ID} not found`); return; }
+
+    el.value = slotText;
+    ['input', 'change', 'blur'].forEach(ev =>
+      el.dispatchEvent(new Event(ev, { bubbles: true })));
+
+    console.log(`[slot‑listener] Filled ${FIELD_ID} with “${slotText}”`);
+  }, false);
+})();
+</script>
+
+
+
+
+<script>
 
       // This was auto-updated on '"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'
     
