@@ -30,6 +30,7 @@ perl -pe '
   
       var location = document.getElementById("input_89") ? document.getElementById("input_89").value : "";
       var provider = document.getElementById("input_90") ? document.getElementById("input_90").value : "";
+      var appointment_date_time = document.getElementById("input_101") ? document.getElementById("input_101").value : "";
 
       var condition = document.getElementById("input_48") ? document.getElementById("input_48").value : "";
       var urgent = document.getElementById("input_58") ? document.getElementById("input_58").value : "";
@@ -48,6 +49,7 @@ perl -pe '
       var submissionData = {
         location: location,
         provider: provider,
+        appointment_date_time: appointment_date_time,
         serviceLine: serviceLineCleaned,
         condition: condition,
         urgent: urgent,
