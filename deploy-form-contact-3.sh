@@ -8,7 +8,7 @@ FORM_OUTPUT_FILE="form-contact-with-script.html"
 
 # ─── JotForm download artifact ───────────────────────────
 # We fetch form-contact.html on each deploy run; don’t commit it.
-form-contact.html
+#form-contact.html
 # ──────────────────────────────────────────────────────────
 
 
