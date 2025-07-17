@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ◼︎ CONFIGURABLE
+# ◼︎ CONFIGURATION
 JOTFORM_URL='https://hipaa.jotform.com/251305644776158'
 FORM_SOURCE_FILE="form-contact.html"
 FORM_OUTPUT_FILE="form-contact-with-script.html"
@@ -9,7 +9,7 @@ FORM_OUTPUT_FILE="form-contact-with-script.html"
 # 1️⃣  Download the raw form
 curl -Ls "$JOTFORM_URL" > "$FORM_SOURCE_FILE"
 
-# 2️⃣  Build the insertion block (edit *only* inside this here-doc)
+# 2️⃣  Build the insertion block (edit *only* between EOF markers)
 INSERT_FILE="$(mktemp)"
 cat << 'EOF' > "$INSERT_FILE"
 <!-- 🧩 auto‑inserted mdtools block -->
@@ -77,10 +77,19 @@ function testSubmitFunction() {
 <!-- /🧩 mdtools block -->
 EOF
 
-# 3️⃣  Insert it just before </body>
-sed '/<\/body>/e cat '"$INSERT_FILE"'' "$FORM_SOURCE_FILE" > "$FORM_OUTPUT_FILE"
+# 3️⃣  Awk‑powered insertion *before* </body>
+awk -v ins="$INSERT_FILE" '
+  BEGIN {
+    while ( ( getline line < ins ) > 0 ) block = block line "\n"
+    close(ins)
+  }
+  /<\/body>/ {
+    printf "%s", block
+  }
+  { print }
+' "$FORM_SOURCE_FILE" > "$FORM_OUTPUT_FILE"
 
-# 4️⃣  Clean up
+# 4️⃣  Cleanup
 rm "$INSERT_FILE"
 
 # 5️⃣  Commit & push
