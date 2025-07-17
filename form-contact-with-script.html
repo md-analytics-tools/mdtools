@@ -2292,9 +2292,15 @@ function testSubmitFunction() {
   const emojiRE = /(👂🏻|👃🏻|🗣️)/gu;
   const serviceLine = document.getElementById("input_6")?.value || "";
   const serviceLineCleaned = serviceLine.replace(emojiRE,'').trim();
-  const appointmentDateTime =
-        document.getElementById('input_101')?.value ||
-        window.selectedAppointment || '';
+  // const appointmentDateTime =
+  //       document.getElementById('input_101')?.value ||
+  //       window.selectedAppointment || '';
+
+	const appointmentDateTime = String(
+  document.getElementById('input_101')?.value ||
+  window.selectedAppointment ||
+  ''
+);
   	console.log('🗓️ appointment_date_time:', appointmentDateTime);
 	
   const data = {
