@@ -2296,17 +2296,16 @@ function testSubmitFunction() {
   //       document.getElementById('input_101')?.value ||
   //       window.selectedAppointment || '';
 
-	const appointmentDateTime = String(
+  var appointmentDateTime = String(
   document.getElementById('input_101')?.value ||
-  window.selectedAppointment ||
-  ''
-);
-  	console.log('🗓️ appointment_date_time:', appointmentDateTime);
+  window.selectedAppointment ||   '');
+  appointmentDateTime = `Appt Date: ${appointmentDateTime}`;
+  console.log('🗓️ appointment_date_time:', appointmentDateTime);
 	
   const data = {
     location:                document.getElementById("input_89")?.value || "",
     provider:                document.getElementById("input_90")?.value || "",
-    appointment_date_time: appointmentDateTime,          // ← uses the variable
+    appointment_date_time:   appointmentDateTime,
     serviceLine:             serviceLineCleaned,
     condition:               document.getElementById("input_48")?.value || "",
     urgent:                  document.getElementById("input_58")?.value || "",
