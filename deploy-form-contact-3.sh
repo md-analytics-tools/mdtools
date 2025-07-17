@@ -6,10 +6,10 @@ JOTFORM_URL='https://hipaa.jotform.com/251305644776158'
 FORM_SOURCE_FILE="form-contact.html"
 FORM_OUTPUT_FILE="form-contact-with-script.html"
 
-# 1️⃣  Download the raw form
+# 1️⃣ Download the raw JotForm HTML
 curl -Ls "$JOTFORM_URL" > "$FORM_SOURCE_FILE"
 
-# 2️⃣  Build the insertion block (edit *only* between EOF markers)
+# 2️⃣ Build the insertion block (edit *only* between EOFs)
 INSERT_FILE="$(mktemp)"
 cat << 'EOF' > "$INSERT_FILE"
 <!-- 🧩 auto‑inserted mdtools block -->
@@ -77,7 +77,7 @@ function testSubmitFunction() {
 <!-- /🧩 mdtools block -->
 EOF
 
-# 3️⃣  Awk‑powered insertion *before* </body>
+# 3️⃣ Insert it before </body> via awk
 awk -v ins="$INSERT_FILE" '
   BEGIN {
     while ( ( getline line < ins ) > 0 ) block = block line "\n"
@@ -89,11 +89,19 @@ awk -v ins="$INSERT_FILE" '
   { print }
 ' "$FORM_SOURCE_FILE" > "$FORM_OUTPUT_FILE"
 
-# 4️⃣  Cleanup
+# 4️⃣ Cleanup only the temp here-doc file
 rm "$INSERT_FILE"
 
-# 5️⃣  Commit & push
+# 5️⃣ Git commit + pull (with autostash fallback) + push
 git add "$FORM_OUTPUT_FILE"
 git commit -m "auto-update form-contact-with-script.html $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-git pull --rebase
+
+if git pull --rebase --autostash; then
+  echo "Pulled with --autostash"
+else
+  git stash push -u -m "autostash before pull" >/dev/null
+  git pull --rebase
+  git stash pop --quiet
+fi
+
 git push
