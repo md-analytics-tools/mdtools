@@ -6,6 +6,12 @@ JOTFORM_URL='https://hipaa.jotform.com/251305644776158'
 FORM_SOURCE_FILE="form-contact.html"
 FORM_OUTPUT_FILE="form-contact-with-script.html"
 
+# ─── JotForm download artifact ───────────────────────────
+# We fetch form-contact.html on each deploy run; don’t commit it.
+form-contact.html
+# ──────────────────────────────────────────────────────────
+
+
 # 1️⃣ Download the raw JotForm HTML
 curl -Ls "$JOTFORM_URL" > "$FORM_SOURCE_FILE"
 
