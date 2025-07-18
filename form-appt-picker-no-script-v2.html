@@ -1122,8 +1122,9 @@
             calendarSection.classList.add('has-slots');
             
             // Send message to parent when date is picked
+            // Calculate scroll position relative to iframe content (not window scroll)
             const timeSlotsRect = timeSlotsSection.getBoundingClientRect();
-            const scrollNeeded = Math.max(0, window.scrollY + timeSlotsRect.top - 20);
+            const scrollNeeded = Math.max(0, timeSlotsRect.top - 20);
             const message = {
                 type: "datePicked",
                 date: dateStr,
@@ -1133,19 +1134,6 @@
             if (window.parent !== window) {
                 window.parent.postMessage(message, "*");
             }
-            
-            // On mobile, scroll to bring time slots to top of screen
-            setTimeout(() => {
-                if (window.innerWidth <= 768) { // Mobile breakpoint
-                    const timeSlotsRect = timeSlotsSection.getBoundingClientRect();
-                    const targetPosition = window.scrollY + timeSlotsRect.top - 20; // 20px padding from top
-                    
-                    window.scrollTo({
-                        top: Math.max(0, targetPosition),
-                        behavior: 'smooth'
-                    });
-                }
-            }, 400); // Wait for time slots animation to complete
         }
 
         // Timezone offset mappings
