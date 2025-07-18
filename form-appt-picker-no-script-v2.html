@@ -1287,8 +1287,7 @@
             setTimeout(() => {
                 const confirmationElement = document.getElementById('confirmation');
                 const confirmationRect = confirmationElement.getBoundingClientRect();
-                const viewportHeight = window.innerHeight;
-                const scrollNeeded = Math.max(0, window.scrollY + confirmationRect.top - (viewportHeight / 2) + (confirmationRect.height / 2));
+                const scrollNeeded = Math.max(0, confirmationRect.top - 20);
                 const message = {
                     type: "timePicked",
                     time: formatTime(slot.start),
@@ -1318,22 +1317,7 @@
             
             confirmation.classList.add('show');
             
-            // Scroll to center the confirmation in mobile view
-            setTimeout(() => {
-                if (window.innerWidth <= 768) { // Mobile breakpoint
-                    const confirmationRect = confirmation.getBoundingClientRect();
-                    const viewportHeight = window.innerHeight;
-                    const confirmationHeight = confirmationRect.height;
-                    
-                    // Calculate position to center the confirmation vertically
-                    const targetPosition = window.scrollY + confirmationRect.top - (viewportHeight / 2) + (confirmationHeight / 2);
-                    
-                    window.scrollTo({
-                        top: Math.max(0, targetPosition),
-                        behavior: 'smooth'
-                    });
-                }
-            }, 100); // Small delay to ensure confirmation is rendered
+            // Note: Scroll handling is now managed by parent window via iframe messaging
         }
 
         // Confirm the appointment
@@ -1343,7 +1327,7 @@
             // Send message to parent when "continue to form" is clicked
             const confirmationElement = document.getElementById('confirmation');
             const confirmationRect = confirmationElement.getBoundingClientRect();
-            const scrollNeeded = Math.max(0, window.scrollY + confirmationRect.top);
+            const scrollNeeded = Math.max(0, confirmationRect.top - 20);
             const message = {
                 type: "continueToForm",
                 appointment: {
@@ -1379,7 +1363,7 @@
             // Send message to parent when "choose another time" is clicked
             const calendarElement = document.querySelector('.calendar-section');
             const calendarRect = calendarElement.getBoundingClientRect();
-            const scrollNeeded = Math.max(0, window.scrollY + calendarRect.top - 20);
+            const scrollNeeded = Math.max(0, calendarRect.top - 20);
             const message = {
                 type: "chooseAnotherTime",
                 scrollNeeded: scrollNeeded
