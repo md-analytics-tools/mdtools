@@ -1,440 +1,1638 @@
-Skip to content
-Files
-Commands
-Search
-Packager files
-Config files
-Report accurate scrolling offset to the parent window for all actions
-
-1 message & 1 action
-Perfect! I've now removed all internal scrolling from the iframe and fixed all the scroll calculations. The key changes were: 1. **Removed all internal `window.scrollTo()` calls** from the iframe 2. **Fixed all scroll calculations** to use `getBoundingClientRect().top - 20` instead of `window.scrollY + getBoundingClientRect().top` 3. **Eliminated competing scroll actions** that were causing the jerky behavior The iframe now only sends scroll position messages to the parent window, and the parent handles all scrolling. This should eliminate the jerky two-step scroll behavior you were experiencing. Now when you select a date, there will be one smooth scroll action directly to the top of the time slots, without any internal iframe scrolling interfering with the parent window's scroll animation.
-Checkpoint made
-2 hours ago
-Improve scrolling behavior when confirming appointments on the scheduler
-48s of work & 24 lines of code changed
-good job. I changed the date delay to 500ms. Please update the parent-page HTML to reflect this.
-
-However once time is selected the "Continue to form button" is in the middle of the page. I did play around with different values for the number (i.e.120) in this line: targetScroll = targetScroll - navBarHeight + 120;
-
-However it really didn't do much. Since we're reporting the dynamic vertical frame height, wouldn't just be better on select time to scroll down to the bottom of the frame?
-
-2 hours ago
-CR
-
-chad130
-
-2 messages & 2 actions
-You're absolutely right! Since we're dynamically reporting the iframe height, it would be much better to scroll to the bottom of the frame when a time is selected. Let me make both changes:
-Checkpoint made
-2 hours ago
-Adjust date selection delay and scroll to the bottom of the frame
-16s of work & 7 lines of code changed
-This works for the "Continue to form" button". However you messed up display of the time slots...they are back to scrolling down the middle and then back up to the top. The select date scroll was working perfectly at the last checpoint 9 minutes ago.
-
-2 hours ago
-CR
-
-chad130
-
-11 messages & 3 actions
-You're right! I accidentally broke the date selection scroll. The issue is that I changed the `time` case logic but didn't account for the fact that the `scrollOffset` parameter is already being passed from the iframe, so I shouldn't be recalculating the entire scroll position. Let me fix this by reverting the date selection back to its working state and only changing the time selection logic:
-Checkpoint made
-2 hours ago
-Adjust how the page scrolls to make time slots easier to select
-1 minute of work & 4 lines of code changed
-That didn't fix it. Same problem still remains.
-
-2 hours ago
-CR
-
-chad130
-
-4 messages & 2 actions
-I see the issue now. The problem is that the date selection logic is still using the iframe's scroll offset, but I'm completely overriding it for time selection. Let me debug this by looking at what the iframe is actually sending for both cases. Let me first revert the time selection to use the iframe's scroll offset like the date selection does, and then adjust it properly:
-Checkpoint made
-2 hours ago
-Improve the appearance and behavior of the appointment booking iframe
-24s of work & 10 lines of code changed
-Ok, you're still having this problem. At your checkpoint 19 minutes ago, you had solved where it was a smooth scroll down to times after selecting date. The only change we wanted to make after that was on selecign time to scroll to teh bottom of the frame. This is just scrolling to middle of the time slots and then back up to the top. Please think hard abou tthis. You had it correct 19 min ago.
-
-2 hours ago
-CR
-
-chad130
-
-3 messages & 4 actions
-You're absolutely right. Let me think through this carefully. 19 minutes ago, the date selection was working perfectly with smooth scrolling to the time slots. The issue is that I've been overcomplicating the time selection logic. Let me look at what was working 19 minutes ago and restore that exact behavior for date selection, then make only the minimal change needed for time selection. The key insight is that the iframe is sending the correct scroll position, and I should trust that calculation rather than overriding it completely.
-Checkpoint made
-2 hours ago
-Adjust the scroll position within the scheduler when a time is selected
-Screenshot
-Load preview
-31s of work & 5 lines of code changed
-Note whether errors happen when the page loads, when you click something, or when data is being saved. Helping the Agent understand the timing helps narrow down the cause.
-I've restored the smooth date selection scroll behavior and implemented bottom-of-iframe scrolling for time selection.
-
-✓ Date selection: Smooth scroll to time slots (restored working behavior)
-✓ Time selection: Scroll to bottom of iframe to show confirmation buttons
-✓ Updated date selection delay to 500ms as requested
-✓ Removed all internal iframe scrolling conflicts
-✓ Fixed scroll calculations to use iframe content positions
-
-Can you test the date selection to confirm it's working smoothly again, and check that the time selection shows the confirmation buttons properly?
-
-Perfecto!!!
-
-Ok, lets make a small change. In mobile view, teh right side of the time zone dropdown needs to be flush with the right of the time slots.
-
-2 hours ago
-CR
-
-chad130
-
-5 messages & 4 actions
-Perfect! I'll align the timezone dropdown with the time slots in mobile view. Let me find the current CSS for the timezone dropdown and adjust it.
-Checkpoint made
-2 hours ago
-Improve the appearance of time zone selection on smaller screens
-Screenshot
-Load preview
-30s of work & 1 lines of code changed
-Still not ipmroved. Also right of the contaner/box around the "You're penciled in for" needs to be flush with the right of the time slots as well.
-
-To summarize, both the time slots and the container for the confirmation boxes need to be flush on the right.
-
-2 hours ago
-CR
-
-chad130
-
-5 messages & 5 actions
-Looking at the layout, I need to examine the container structure to understand why the timezone dropdown and confirmation box aren't aligning with the time slots. Let me check the current CSS structure and fix both elements.
-Checkpoint made
-2 hours ago
-Align confirmation message box with available time slots more precisely
-Screenshot
-Load preview
-34s of work & 7 lines of code changed
-This has not improved.
-
-I should note that the time zone width was perfect BEFORE the date is picked. Once the date is picked and the time slots are shown, the time zone box becomes too wide. I should also note, that it doesn't overflow the iframe box. The iframe box is covering the right margin of the the time zone, but only AFTEr the time slots are shown.
-
-2 hours ago
-CR
-
-chad130
-
-3 messages & 2 actions
-I understand now! The timezone dropdown width changes when the time slots are shown because the layout switches from a single column to a two-column grid. Let me examine the CSS that controls this behavior and fix it.
-Checkpoint made
-2 hours ago
-KEY WORKING PICKER!!!! Prevent the time zone selector from overflowing on smaller screens
-Screenshot
-Load preview
-20s of work & 7 lines of code changed
-Good job. Now once the "Continue to form" button is clicked, we need to:
-
-#1. disappear the appt-picker
-#2. pass the continueToForm.appointment data to jotform via iframe message. The jotform form code is attached below so you can see this method. It will populate the hidden appointment box on the jotform. Here is the parent page code we were using before as an example:
-
-/* 2️⃣ Height from Jotform iframe (setHeight:<num>) */
-if (typeof e.data === "string" && e.data.startsWith("setHeight:")) {
-const h = parseInt(e.data.split(":")[1] || "0", 10);
-if (!isNaN(h)) {
-const cf = document.getElementById("contactForm");
-if (cf) { cf.style.height = h + "px"; }
-}
-return;
-}
-
-  /* 3️⃣  Slot chosen in picker */
-  if (e.data.type === "appointmentSelected" &&
-      e.data.data && e.data.data.start) {
-    const slot  = e.data.data;
-    const label = fmt(slot.start);
-    const picker = document.getElementById("apptPicker");
-    const cf     = document.getElementById("contactForm");
-    cf.src           = "https://md-analytics-tools.github.io/mdtools/form-contact-with-script.html";
-    cf.style.display = "block";
-    picker.style.display = "none";
-#3. the jotform form withich needs to be shown: https://md-analytics-tools.github.io/mdtools/form-contact-with-script.html
-
-Can you please incorporate that into the parent page example.
-
-2 hours ago
-CR
-
-chad130
-
-9 messages & 6 actions
-I'll implement the form integration into the parent page. This involves: 1. Hiding the appointment picker when "Continue to form" is clicked 2. Showing the JotForm iframe 3. Passing the appointment data to the JotForm Let me update the parent page example:
-Checkpoint made
-2 hours ago
-Enable smooth transition to form by sending appointment details
-Screenshot
-Load preview
-1 minute of work & 51 lines of code changed
-Good job. Once the jotform loads, the page should scroll back to the top of the iframe.
-
-2 hours ago
-CR
-
-chad130
-
-2 messages & 1 action
-I'll add scroll-to-top functionality when the JotForm loads. This should happen after the form is displayed and the appointment data is sent.
-Checkpoint made
-2 hours ago
-Make the page automatically scroll to the top of the form after loading
-Screenshot
-Load preview
-16s of work & 10 lines of code changed
-Need to remember to keep the nav bar in mind. It's 120px and covers the top. This should be a unified setting in the parent page code.
-
-1 hour ago
-CR
-
-chad130
-
-4 messages & 4 actions
-You're absolutely right! I need to create a unified nav bar height setting and apply it to the scroll-to-top functionality. Let me update the parent page code to handle this consistently.
-Checkpoint made
-1 hour ago
-WORKS GREAT Adjust form and iframe scrolling to account for the mobile navigation bar
-Screenshot
-Load preview
-30s of work & 12 lines of code changed
-Good job.
-
-So above you took the continueToForm.appointment and passed it to the jotform.
-
-I want you to change the continueToForm.appointment on the appt-picker submit to have a JSON of 4 keys:
-startTime
-endTime
-duration
-slot =>
-slot.facility_id === 10277771 &&
-slot.provider_id === 10193404 &&
-slot.resource_id === 10191884
-)
-The startTime and endTime shoudl be reported in an ISO format as a date/timestamp.
-
-You'll need to calculate the duration in minutes based on startTime and endTime.
-
-The "slot" is from how we told you to filter the API results above. So those values should be passed with a parent key as "slot"
-
-That entire 4 key JSON should be passed to the appoitnment time field on the jotform.
-
-1 hour ago
-CR
-
-chad130
-
-8 messages & 8 actions
-I need to modify the appointment picker to send the new JSON structure with the 4 keys. Let me first examine the current appointment picker code to understand how it's structured.
-Checkpoint made
-1 hour ago
-Update the appointment details to include specific time and duration information
-Screenshot
-Load preview
-1 minute of work & 31 lines of code changed
-Let's stringify that JSON before you put it into the Jotform appointment field..
-Also change the key from "slot" to "slotInfo"
-
-1 hour ago
-CR
-
-chad130
-
-2 messages & 1 action
-I'll update the appointment picker to stringify the JSON and change "slot" to "slotInfo".
-Checkpoint made
-1 hour ago
-Prepare appointment details for Jotform by formatting slot information
-Screenshot
-Load preview
-14s of work & 17 lines of code changed
-Update the code to log it to the console.
-
-1 hour ago
-CR
-
-chad130
-
-2 messages & 1 action
-I'll add console logging to show the stringified JSON appointment data.
-Checkpoint made
-60 minutes ago
-Log appointment details to the console for debugging purposes
-Screenshot
-Load preview
-15s of work & 6 lines of code changed
-I'm repasting the jotform html here so you can see how the appointment field (input_101) works. You'll also note that there is a function to populate that field also shown here:
-const FIELD_ID = 'input_101';
-
-window.addEventListener('message', (evt) => {
-let slotText = null;
-
-if (evt?.data?.type === 'appointmentSelected' && evt.data.data) {
-  slotText = evt.data.data.label ?? evt.data.data.start;
-} else if (evt?.data?.type === 'debugFill') {
-  slotText = evt.data.slot;
-}
-if (!slotText) return;
-/* 1️⃣  Put it in the form field so Jotform sees it */
-const el = document.getElementById(FIELD_ID);
-if (el) {
-  el.value = slotText;
-  ['input','change','blur'].forEach(ev =>
-    el.dispatchEvent(new Event(ev, { bubbles:true })));
-}
-/* 2️⃣  Keep an extra copy for testSubmitFunction() */
-window.selectedAppointment = slotText;
-}, false);
-})();
-
-/* jotform → parent bridge */
-
-Is the index.html stringifying the JSON before putting it in that field?
-
-50 minutes ago
-CR
-
-chad130
-
-3 messages & 2 actions
-Looking at the JotForm code you provided, I can see that it's looking for `evt.data.data.label` or `evt.data.data.start` to populate the appointment field. However, our current setup is sending a stringified JSON object. Let me check what we're currently sending and update it to work with the JotForm's expected format. The JotForm expects the appointment data to be in `evt.data.data`, and it will use either `.label` or `.start` as the field value. Since we're sending a stringified JSON, we should send it as the `.label` property so the JotForm can capture it properly.
-Checkpoint made
-49 minutes ago
-Improve communication with JotForm by sending appointment details correctly
-Screenshot
-Load preview
-25s of work & 5 lines of code changed
-Good job! Now i see you have the times in Zulu time. Let's do Pacific, please.
-
-48 minutes ago
-CR
-
-chad130
-
-5 messages & 4 actions
-I'll update the appointment picker to use Pacific time instead of Zulu time. The current implementation is using `toISOString()` which gives UTC/Zulu time. I need to convert to Pacific time before creating the ISO string.
-Checkpoint made
-47 minutes ago
-WORKING Display appointment times in Pacific Time instead of Zulu time
-Screenshot
-Load preview
-40s of work & 40 lines of code changed
-Good job.
-
-I don't like how after teh appt-picker form submission, there's a bit of a delay before going back to the top. It should be instantaneous scroll up to the top of the iframe, accounting for the nav bar, to show the jotform.
-
-9 minutes ago
-CR
-
-chad130
-
-2 messages & 1 action
-I'll make the scroll to the top instantaneous by removing the delay and moving the scroll action to happen immediately when the form loads.
-Checkpoint made
-8 minutes ago
-Make the page return to the appointment form immediately after submission
-Screenshot
-Load preview
-24s of work & 26 lines of code changed
-The previous version was better. The iframe in the new version just stays put so you see only thebottom of the jotform.
-
-6 minutes ago
-CR
-
-chad130
-
-2 messages & 2 actions
-You're right, I need to revert back to the previous approach where the scroll happens after the form loads, not before. Let me fix this:
-Checkpoint made
-6 minutes ago
-WORKING Improve user experience by immediately scrolling to the contact form
-Screenshot
-Load preview
-19s of work & 26 lines of code changed
-Good job.
-
-I am seeing the appointment field (input_101) output JSON structure as:
-{"startTime":"2025-07-24T09:00:00.000-08:00","endTime":"2025-07-24T09:30:00.000-08:00","duration":30,"slotInfo":{"facility_id":10277771,"provider_id":10193404,"resource_id":10191884}}
-
-We don't want the backslashes when you're stringifying them.
-
-Just now
-CR
-
-chad130
-The issue is that the JSON is being double-stringified, which is causing the backslashes to escape the quotes. Let me fix this by removing the JSON.stringify() call in the appointment picker since we want to pass the raw JSON object, not a stringified version.
-
-
-Edited index.html
-Now I need to update the parent page to properly stringify the appointment object when passing it to the JotForm:
-
-
-Edited parent-page-example.html
-Perfect! I've fixed the double-stringification issue. Here's what I changed:
-
-✅ Fixed JSON Stringification
-1. Removed double stringify in appointment picker
-
-Removed JSON.stringify() from the appointment picker
-Now sends the raw JSON object to the parent page
-Eliminated the double-stringification that was causing backslashes
-2. Added proper stringify in parent page
-
-Added JSON.stringify(data.appointment) in the parent page when passing to JotForm
-This ensures proper single stringification without escaped quotes
-3. Simplified logging
-
-Removed redundant stringified JSON logging
-Kept the object logging for debugging
-New Data Flow
-Appointment Picker → Creates JSON object (no stringify)
-Parent Page → Receives JSON object and stringifies it once for JotForm
-JotForm Field → Receives clean JSON string without backslashes
-The appointment field (input_101) will now show:
-
-{"startTime":"2025-07-24T09:00:00.000-08:00","endTime":"2025-07-24T09:30:00.000-08:00","duration":30,"slotInfo":{"facility_id":10277771,"provider_id":10193404,"resource_id":10191884}}
-No more escaped quotes or backslashes - just clean, properly formatted JSON.
-
-Checkpoint made
-just now
-Send appointment details without unnecessary formatting for better readability
-Screenshot
-Load preview
-23s of work & 8 lines of code changed
-
-Scroll to latest
-
-Message Agent…
-/
-Open a new tab to test authentication and file uploads.
-
-Commit
-Prevent the time zone selector from overflowing on smaller screens
-Adjusts CSS to ensure the timezone selector fits within the iframe after time slots are displayed on smaller screens.
-
-CH
-
-chad130
-chad130
-committed
-2 hours ago
-1 parent 
-Filter changed files
-Showing 1 changed file.
-
-
-Unified
-
-Split
-index.html
-Modified
 <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Appointment Time Picker</title>
+    <!-- Updated: 2025-07-18 Enhanced with iframe messaging for AppointmentScheduler2 -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: kyrial-display-pro, 'Helvetica', Arial, sans-serif;
+            background-color: #ffffff;
+            color: #267a87;
+            line-height: 1.6;
+        }
+
+        .appointment-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #ffffff;
+            border: none;
+            box-shadow: none;
+            border-radius: 8px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 17px;
+            border-bottom: 1px solid #e6e6e6;
+        }
+
+        .header h1 {
+            color: #267a87;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #319eaf;
+            font-size: 16px;
+        }
+
+        .calendar-section {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 15px;
+            margin-bottom: 0px;
+        }
+
+        .calendar-section:not(.has-slots) {
+            grid-template-columns: 1fr;
+        }
+
+        .calendar-section:not(.has-slots) .time-slots {
+            display: none !important;
+            position: absolute;
+            visibility: hidden;
+        }
+
+        .date-picker {
+            background: #ffffff;
+            padding: 5px;
+            border-radius: 8px;
+            border: none;
+        }
+
+        .date-picker h3 {
+            color: #267a87;
+            margin-bottom: 13px;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .calendar-widget {
+            background: #ffffff;
+            border-radius: 6px;
+            border: none;
+            overflow: hidden;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 20px;
+            background: #ffffff;
+            color: #267a87;
+            border: none;
+            position: relative;
+        }
+
+        .calendar-nav {
+            background: none;
+            border: none;
+            color: #267a87;
+            cursor: pointer;
+            font-size: 29px;
+            padding: 10px 15px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+            position: absolute;
+        }
+
+        .calendar-nav:first-child {
+            left: 25%;
+        }
+
+        .calendar-nav:last-child {
+            right: 25%;
+        }
+
+        .calendar-nav:hover {
+            background: rgba(38, 122, 135, 0.1);
+        }
+
+        .calendar-nav:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .calendar-title {
+            font-size: 22px;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .calendar-grid {
+            padding: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .days-grid {
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .days-grid.slide-left {
+            transform: translateX(-100%);
+        }
+
+        .days-grid.slide-right {
+            transform: translateX(100%);
+        }
+
+        .calendar-title {
+            transition: opacity 0.2s ease;
+        }
+
+        .calendar-title.fade-out {
+            opacity: 0;
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            margin-bottom: 10px;
+        }
+
+        .weekday {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #319eaf;
+            padding: 8px 4px;
+            text-transform: uppercase;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            color: #267a87;
+            background: transparent;
+            border: none;
+            width: 44px;
+            height: 44px;
+        }
+
+        .calendar-day.today::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: #267a87;
+            border-radius: 50%;
+        }
+
+
+
+        .calendar-day.other-month {
+            color: #d0d6d6;
+            cursor: not-allowed;
+            font-weight: normal;
+        }
+
+        .calendar-day.past {
+            color: #d0d6d6;
+            cursor: not-allowed;
+            font-weight: normal;
+        }
+
+        .calendar-day:not(.has-slots):not(.other-month):not(.past) {
+            color: #267A87;
+            font-weight: normal;
+        }
+
+        .calendar-day.has-slots {
+            font-weight: bold;
+            background: #d0d6d6;
+            color: #267A87;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+        }
+
+
+
+        .calendar-day.selected {
+            background: #00a69c !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+        }
+
+
+
+
+
+        .time-slots {
+            background: #ffffff;
+            opacity: 0;
+            transform: translateX(30px) scale(0.95);
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            pointer-events: none;
+            visibility: hidden;
+        }
+
+        .time-slots.show {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+            pointer-events: all;
+            visibility: visible;
+        }
+
+        /* Timezone selector styles */
+        .timezone-section {
+            margin-top: 0px;
+            padding: 5px 0;
+        }
+
+        .calendar-section.has-slots ~ .timezone-section .form-dropdown {
+            width: 320px;
+            max-width: 320px;
+        }
+
+        @media (max-width: 768px) {
+            .calendar-section.has-slots ~ .timezone-section .form-dropdown {
+                width: 100%;
+                max-width: 100%;
+            }
+        }
+
+        .calendar-section.has-slots + .timezone-section {
+            margin-top: 15px;
+        }
+
+        .timezone-section h3 {
+            color: #267a87;
+            margin-bottom: 13px;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .form-dropdown {
+            border-radius: 6px;
+            appearance: none;
+            margin: 0;
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #267A87;
+            background: #ffffff;
+            color: #267a87;
+            font-family: kyrial-display-pro, 'Helvetica', Arial, sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+            background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'><path fill='%23267a87' d='M3.5 5L7 8.5L10.5 5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 40px;
+        }
+
+        .form-dropdown:hover {
+            border-color: #319eaf;
+        }
+
+        .form-dropdown:focus {
+            outline: none;
+            border-color: #267a87;
+            box-shadow: 0 0 0 2px rgba(38, 122, 135, 0.1);
+        }
+
+        .time-slots h3 {
+            color: #267a87;
+            margin-bottom: 17px;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .slots-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .time-slot {
+            padding: 12px 16px;
+            border: 1px solid #267A87;
+            border-radius: 6px;
+            background: #ffffff;
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            color: #267a87;
+            transition: all 0.3s ease;
+            position: relative;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: none;
+        }
+
+        .time-slots.show .time-slot {
+            animation: slideInUp 0.4s ease-out forwards;
+        }
+
+        .time-slots.show .time-slot:nth-child(1) { animation-delay: 0.1s; }
+        .time-slots.show .time-slot:nth-child(2) { animation-delay: 0.15s; }
+        .time-slots.show .time-slot:nth-child(3) { animation-delay: 0.2s; }
+        .time-slots.show .time-slot:nth-child(4) { animation-delay: 0.25s; }
+        .time-slots.show .time-slot:nth-child(5) { animation-delay: 0.3s; }
+        .time-slots.show .time-slot:nth-child(6) { animation-delay: 0.35s; }
+
+        @keyframes slideInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .time-slots.show .time-slot:hover {
+            border-color: #319eaf;
+            background: #f0f9fa;
+            transform: translateY(-1px);
+        }
+
+        .time-slot.selected {
+            background: #00a69c;
+            color: #ffffff;
+            border-color: #00a69c;
+            font-weight: bold;
+        }
+
+        .time-slot.selected:hover {
+            background: #00a69c;
+            border-color: #00a69c;
+        }
+
+        .no-slots {
+            text-align: center;
+            padding: 40px;
+            color: #267A87;
+            font-size: 16px;
+        }
+
+        .contact {
+            color: #2e2b82;
+            text-decoration: underline;
+        }
+
+        .contact:hover {
+            color: #2e2b82;
+            text-decoration: none;
+        }
+
+        .confirmation {
+            background: #f0f9fa;
+            border: 1px solid #319eaf;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .confirmation.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .confirmation h4 {
+            color: #267a87;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .confirmation p {
+            color: #319eaf;
+            margin-bottom: 15px;
+        }
+
+        .btn-confirm {
+            background: #00a69c;
+            color: #ffffff;
+            border: 2px solid #00a69c;
+            padding: 11px 23px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-family: kyrial-display-pro, 'Helvetica', Arial, sans-serif;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .btn-confirm:hover {
+            background: #00a69c;
+            border-color: #00a69c;
+            color: #ffffff;
+        }
+
+        .btn-cancel {
+            background: #ffffff;
+            color: #319eaf;
+            border: 2px solid #319eaf;
+            padding: 10px 22px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-family: kyrial-display-pro, 'Helvetica', Arial, sans-serif;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .confirmation:has(.btn-cancel:hover) .btn-confirm {
+            background: #ffffff;
+            color: #319eaf;
+            border: 2px solid #319eaf;
+            font-weight: normal;
+        }
+
+        .btn-cancel:hover {
+            background: #00a69c;
+            color: #ffffff;
+            border: 2px solid #00a69c;
+            font-weight: bold;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #319eaf;
+        }
+
+        .error-message {
+            background: #ffe6e6;
+            border: 1px solid #ff9999;
+            color: #cc0000;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .error-message.offline {
+            background: #fff3cd;
+            border: 1px solid #ffecb5;
+            color: #856404;
+        }
+
+        .retry-button {
+            background: #267a87;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 14px;
+            transition: background 0.2s ease;
+        }
+
+        .retry-button:hover {
+            background: #319eaf;
+        }
+
+        .retry-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .retry-button.success {
+            background: #28a745;
+        }
+
+        .retry-progress {
+            margin-top: 10px;
+            color: #267a87;
+            font-size: 13px;
+            font-style: italic;
+        }
+
+        /* Skeleton loading styles */
+        .skeleton-calendar {
+            display: none;
+        }
+
+        .skeleton-calendar.show {
+            display: block;
+        }
+
+        .skeleton-header {
+            background: #f0f9fa;
+            height: 40px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .skeleton-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            margin-bottom: 10px;
+        }
+
+        .skeleton-weekday {
+            background: #f0f9fa;
+            height: 30px;
+            border-radius: 4px;
+        }
+
+        .skeleton-day {
+            background: #f0f9fa;
+            height: 44px;
+            border-radius: 4px;
+            aspect-ratio: 1;
+        }
+
+        .skeleton-day:nth-child(7n+1),
+        .skeleton-day:nth-child(7n+2),
+        .skeleton-day:nth-child(7n+3) {
+            animation-delay: 0.1s;
+        }
+
+        .skeleton-day:nth-child(7n+4),
+        .skeleton-day:nth-child(7n+5) {
+            animation-delay: 0.2s;
+        }
+
+        .skeleton-day:nth-child(7n+6),
+        .skeleton-day:nth-child(7n) {
+            animation-delay: 0.3s;
+        }
+
+        /* Skeleton animation */
+        .skeleton-header,
+        .skeleton-weekday,
+        .skeleton-day {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .skeleton-header::before,
+        .skeleton-weekday::before,
+        .skeleton-day::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.6),
+                transparent
+            );
+            animation: skeleton-shimmer 1.5s infinite;
+        }
+
+        @keyframes skeleton-shimmer {
+            0% {
+                left: -100%;
+            }
+            100% {
+                left: 100%;
+            }
+        }
+
+        /* Hide real calendar when skeleton is showing */
+        .calendar-widget.skeleton-loading {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .appointment-container {
+                margin: 10px;
+                padding: 15px;
+            }
+
+            .calendar-section {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .calendar-widget {
+                border: none;
+            }
+
+            .calendar-header {
+                padding: 12px 15px;
+            }
+
+            .calendar-title {
+                font-size: 19px;
+            }
+
+            .calendar-nav {
+                font-size: 24px;
+                padding: 8px 12px;
+            }
+
+            .calendar-nav:first-child {
+                left: 20%;
+            }
+
+            .calendar-nav:last-child {
+                right: 20%;
+            }
+
+            .calendar-grid {
+                padding: 12px;
+            }
+
+            .weekday {
+                font-size: 11px;
+                padding: 6px 2px;
+            }
+
+            .calendar-day {
+                font-size: 14px;
+                width: 40px;
+                height: 40px;
+            }
+
+            .calendar-day.has-slots,
+            .calendar-day.selected {
+                width: 38px;
+                height: 38px;
+            }
+
+            .slots-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 10px;
+            }
+
+            .time-slot {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+
+            .form-dropdown {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .appointment-container {
+                margin: 5px;
+                padding: 10px;
+            }
+
+            .calendar-header {
+                padding: 10px 12px;
+            }
+
+            .calendar-title {
+                font-size: 18px;
+            }
+
+            .calendar-nav {
+                font-size: 26px;
+                padding: 8px 12px;
+                min-width: 44px;
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .calendar-nav:first-child {
+                left: 5%;
+            }
+
+            .calendar-nav:last-child {
+                right: 5%;
+            }
+
+            .calendar-grid {
+                padding: 10px;
+            }
+
+            .weekday {
+                font-size: 10px;
+                padding: 5px 1px;
+            }
+
+            .calendar-day {
+                font-size: 14px;
+                width: 36px;
+                height: 36px;
+            }
+
+            .calendar-day.has-slots,
+            .calendar-day.selected {
+                width: 34px;
+                height: 34px;
+            }
+
+            .slots-grid {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                gap: 8px;
+            }
+
+            .time-slot {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+
+            .form-dropdown {
+                max-width: 100%;
+                width: 100%;
+                font-size: 13px;
+                padding: 10px 12px;
+                padding-right: 35px;
+            }
+
+            .timezone-section {
+                padding: 0;
+                margin: 15px 0;
+            }
+
+            .confirmation {
+                text-align: left;
+                margin-left: 0;
+                margin-right: 0;
+            }
+
+            .btn-confirm, .btn-cancel {
+                display: block;
+                width: 100%;
+                margin: 8px 0;
+                margin-right: 0;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="appointment-container">
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="calendar-section">
+            <div class="date-picker">
+                <h3>Select a Date & Time</h3>
+                
+                <!-- Skeleton calendar for loading state -->
+                <div class="skeleton-calendar" id="skeletonCalendar">
+                    <div class="skeleton-header"></div>
+                    <div class="skeleton-grid">
+                        <div class="skeleton-weekday"></div>
+                        <div class="skeleton-weekday"></div>
+                        <div class="skeleton-weekday"></div>
+                        <div class="skeleton-weekday"></div>
+                        <div class="skeleton-weekday"></div>
+                        <div class="skeleton-weekday"></div>
+                        <div class="skeleton-weekday"></div>
+                    </div>
+                    <div class="skeleton-grid">
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                    </div>
+                </div>
+                
+                <!-- Real calendar -->
+                <div class="calendar-widget" id="realCalendar">
+                    <div class="calendar-header">
+                        <button class="calendar-nav" id="prevMonth">‹</button>
+                        <h4 class="calendar-title" id="monthTitle"></h4>
+                        <button class="calendar-nav" id="nextMonth">›</button>
+                    </div>
+                    <div class="calendar-grid">
+                        <div class="weekdays">
+                            <div class="weekday">Sun</div>
+                            <div class="weekday">Mon</div>
+                            <div class="weekday">Tue</div>
+                            <div class="weekday">Wed</div>
+                            <div class="weekday">Thu</div>
+                            <div class="weekday">Fri</div>
+                            <div class="weekday">Sat</div>
+                        </div>
+                        <div class="days-grid" id="daysGrid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="time-slots">
+                <h3 id="timeSlotsHeader">Available Times</h3>
+                <div id="slotsContainer" class="slots-grid">
+                    <div class="no-slots">Please select a date to view available times</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="timezone-section">
+            <h3>Time Zone</h3>
+            <select class="form-dropdown" id="timezoneSelect" name="timezone" aria-label="Time Zone">
+                <option value="">Please Select</option>
+                <option value="Hawaiʻi Time – US & Canada">Hawaiʻi Time – US & Canada</option>
+                <option value="Pacific Time – US & Canada" selected>Pacific Time – US & Canada</option>
+                <option value="Mountain Time – US & Canada">Mountain Time – US & Canada</option>
+                <option value="Central Time – US & Canada">Central Time – US & Canada</option>
+                <option value="Eastern Time – US & Canada">Eastern Time – US & Canada</option>
+                <option value="Alaska Time – US & Canada">Alaska Time – US & Canada</option>
+                <option value="Atlantic Time – Canada">Atlantic Time – Canada</option>
+                <option value="Newfoundland Time – Canada">Newfoundland Time – Canada</option>
+            </select>
+        </div>
+
+        <div class="confirmation" id="confirmation">
+            <h4>📝 You're Penciled In For:</h4>
+            <p id="confirmationText"></p>
+            <h4 style="color: #267a87; margin: 15px 0 10px 0; font-size: 16px; font-weight: 500;">Your appointment time will be reserved after you complete the intake form.</h4>
+            <button class="btn-confirm" onclick="confirmAppointment()">Continue to Form</button>
+            <button class="btn-cancel" onclick="cancelSelection()">Choose Another Time</button>
+        </div>
+    </div>
+
+    <script>
+        // Live appointment data - fetched from API
+        let appointmentData = [];
+
+        let selectedSlot = null;
+        let currentMonth = new Date();
+        let selectedDate = null;
+
+        // Initialize the calendar
+        function initializeCalendar() {
+            const today = new Date();
+            currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            
+            renderCalendar();
+            setupCalendarNavigation();
+        }
+
+        // Get dates that have available appointments
+        function getAvailableDates() {
+            const availableDates = new Set();
+            appointmentData.forEach(slot => {
+                const slotDate = new Date(slot.start).toISOString().split('T')[0];
+                availableDates.add(slotDate);
+            });
+            return availableDates;
+        }
+
+        // Render the calendar
+        function renderCalendar() {
+            const monthTitle = document.getElementById('monthTitle');
+            
+            // Set month title
+            monthTitle.textContent = currentMonth.toLocaleDateString('en-US', {
+                month: 'long',
+                year: 'numeric'
+            });
+            
+            // Render calendar content
+            renderCalendarContent();
+            
+            // Update navigation button states
+            updateNavButtons();
+        }
+
+        // Render calendar content (days grid only)
+        function renderCalendarContent() {
+            const daysGrid = document.getElementById('daysGrid');
+            const today = new Date();
+            const availableDates = getAvailableDates();
+            
+            // Clear previous days
+            daysGrid.innerHTML = '';
+            
+            // Get first day of month and number of days
+            const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+            const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+            
+            // Get current date in selected timezone
+            const todayStr = getCurrentDateInTimezone();
+            
+            // Generate 42 days (6 weeks)
+            for (let i = 0; i < 42; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                
+                const dayButton = document.createElement('button');
+                dayButton.className = 'calendar-day';
+                dayButton.textContent = date.getDate();
+                
+                const dateStr = date.toISOString().split('T')[0];
+                const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
+                const isPast = date < today;
+                const hasSlots = availableDates.has(dateStr);
+                const isSelected = selectedDate === dateStr;
+                const isToday = dateStr === todayStr;
+                
+                // Add appropriate classes
+                if (!isCurrentMonth) {
+                    dayButton.classList.add('other-month');
+                } else if (isPast && !isToday) {
+                    dayButton.classList.add('past');
+                } else {
+                    if (isToday) {
+                        dayButton.classList.add('today');
+                    }
+                    if (hasSlots) {
+                        dayButton.classList.add('has-slots');
+                    }
+                    if (isSelected) {
+                        dayButton.classList.add('selected');
+                    }
+                    
+                    // Add click handler for current and future dates
+                    dayButton.addEventListener('click', () => selectDate(dateStr));
+                }
+                
+                daysGrid.appendChild(dayButton);
+            }
+        }
+
+        // Setup calendar navigation
+        function setupCalendarNavigation() {
+            document.getElementById('prevMonth').addEventListener('click', () => {
+                animateMonthTransition('prev');
+            });
+            
+            document.getElementById('nextMonth').addEventListener('click', () => {
+                animateMonthTransition('next');
+            });
+        }
+
+        // Animate month transition
+        function animateMonthTransition(direction) {
+            const daysGrid = document.getElementById('daysGrid');
+            const monthTitle = document.getElementById('monthTitle');
+            
+            // Disable navigation during animation
+            const prevButton = document.getElementById('prevMonth');
+            const nextButton = document.getElementById('nextMonth');
+            prevButton.disabled = true;
+            nextButton.disabled = true;
+            
+            // Start fade out title
+            monthTitle.classList.add('fade-out');
+            
+            // Start slide animation
+            if (direction === 'next') {
+                daysGrid.classList.add('slide-left');
+            } else {
+                daysGrid.classList.add('slide-right');
+            }
+            
+            // After slide out completes, update content and slide in
+            setTimeout(() => {
+                // Update month
+                if (direction === 'next') {
+                    currentMonth.setMonth(currentMonth.getMonth() + 1);
+                } else {
+                    currentMonth.setMonth(currentMonth.getMonth() - 1);
+                }
+                
+                // Update title
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+                monthTitle.textContent = `${monthNames[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`;
+                
+                // Reset grid position for slide in from opposite side
+                daysGrid.style.transition = 'none';
+                if (direction === 'next') {
+                    daysGrid.style.transform = 'translateX(100%)';
+                } else {
+                    daysGrid.style.transform = 'translateX(-100%)';
+                }
+                
+                // Re-render calendar content
+                renderCalendarContent();
+                
+                // Force reflow then animate in
+                daysGrid.offsetHeight;
+                daysGrid.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                daysGrid.style.transform = 'translateX(0)';
+                
+                // Remove animation classes
+                daysGrid.classList.remove('slide-left', 'slide-right');
+                
+                // Fade in title
+                setTimeout(() => {
+                    monthTitle.classList.remove('fade-out');
+                }, 50);
+                
+                // Re-enable navigation
+                setTimeout(() => {
+                    daysGrid.style.transition = '';
+                    daysGrid.style.transform = '';
+                    updateNavButtons();
+                }, 300);
+            }, 300);
+        }
+
+        // Update navigation button states
+        function updateNavButtons() {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonthNum = today.getMonth();
+            
+            const prevButton = document.getElementById('prevMonth');
+            const nextButton = document.getElementById('nextMonth');
+            
+            // Disable prev button if showing current month or earlier
+            prevButton.disabled = (
+                currentMonth.getFullYear() < currentYear ||
+                (currentMonth.getFullYear() === currentYear && currentMonth.getMonth() <= currentMonthNum)
+            );
+            
+            // Disable next button if showing 12 months ahead (optional limit)
+            const maxMonth = new Date(currentYear + 1, currentMonthNum, 1);
+            nextButton.disabled = currentMonth >= maxMonth;
+        }
+
+        // Select a date
+        function selectDate(dateStr) {
+            selectedDate = dateStr;
+            renderCalendar();
+            loadSlotsForDate(dateStr);
+            
+            // Show the time slots section and update calendar layout
+            const timeSlotsSection = document.querySelector('.time-slots');
+            const calendarSection = document.querySelector('.calendar-section');
+            timeSlotsSection.classList.add('show');
+            calendarSection.classList.add('has-slots');
+            
+            // Send message to parent when date is picked
+            // Calculate scroll position relative to iframe content (not window scroll)
+            const timeSlotsRect = timeSlotsSection.getBoundingClientRect();
+            const scrollNeeded = Math.max(0, timeSlotsRect.top - 20);
+            const message = {
+                type: "datePicked",
+                date: dateStr,
+                scrollNeeded: scrollNeeded
+            };
+            console.log("📅 Sending datePicked message:", message);
+            if (window.parent !== window) {
+                window.parent.postMessage(message, "*");
+            }
+        }
+
+        // Timezone offset mappings
+        const timezoneOffsets = {
+            'Hawaiʻi Time – US & Canada': -10,
+            'Pacific Time – US & Canada': -8,
+            'Mountain Time – US & Canada': -7,
+            'Central Time – US & Canada': -6,
+            'Eastern Time – US & Canada': -5,
+            'Alaska Time – US & Canada': -9,
+            'Atlantic Time – Canada': -4,
+            'Newfoundland Time – Canada': -3.5
+        };
+
+        // Get selected timezone
+        function getSelectedTimezone() {
+            const timezoneSelect = document.getElementById('timezoneSelect');
+            return timezoneSelect.value || 'Pacific Time – US & Canada';
+        }
+
+        // Get current date in selected timezone
+        function getCurrentDateInTimezone() {
+            const selectedTimezone = getSelectedTimezone();
+            const timezoneMap = {
+                'Hawaiʻi Time – US & Canada': 'Pacific/Honolulu',
+                'Pacific Time – US & Canada': 'America/Los_Angeles',
+                'Mountain Time – US & Canada': 'America/Denver', 
+                'Central Time – US & Canada': 'America/Chicago',
+                'Eastern Time – US & Canada': 'America/New_York',
+                'Alaska Time – US & Canada': 'America/Anchorage',
+                'Atlantic Time – Canada': 'America/Halifax',
+                'Newfoundland Time – Canada': 'America/St_Johns'
+            };
+            
+            const timezone = timezoneMap[selectedTimezone] || 'America/Los_Angeles';
+            
+            try {
+                const now = new Date();
+                // Use Intl.DateTimeFormat to get the date in the specific timezone
+                const formatter = new Intl.DateTimeFormat('en-CA', {
+                    timeZone: timezone,
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                });
+                
+                const parts = formatter.formatToParts(now);
+                const year = parts.find(part => part.type === 'year').value;
+                const month = parts.find(part => part.type === 'month').value;
+                const day = parts.find(part => part.type === 'day').value;
+                
+                return `${year}-${month}-${day}`;
+            } catch (e) {
+                // Fallback to browser's local date
+                return new Date().toISOString().split('T')[0];
+            }
+        }
+
+        // Convert date to Pacific time ISO string
+        function convertToPacificISO(dateString) {
+            const date = new Date(dateString);
+            
+            // Convert to Pacific time using the same timezone handling as the rest of the app
+            try {
+                const formatter = new Intl.DateTimeFormat('en-CA', {
+                    timeZone: 'America/Los_Angeles',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+                
+                const parts = formatter.formatToParts(date);
+                const year = parts.find(part => part.type === 'year').value;
+                const month = parts.find(part => part.type === 'month').value;
+                const day = parts.find(part => part.type === 'day').value;
+                const hour = parts.find(part => part.type === 'hour').value;
+                const minute = parts.find(part => part.type === 'minute').value;
+                const second = parts.find(part => part.type === 'second').value;
+                
+                // Create ISO string in Pacific time
+                return `${year}-${month}-${day}T${hour}:${minute}:${second}.000-08:00`;
+            } catch (e) {
+                // Fallback to original UTC time
+                console.warn('Pacific time conversion failed, using UTC:', e);
+                return new Date(dateString).toISOString();
+            }
+        }
+
+        // Format time for display with timezone conversion
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            const selectedTimezone = getSelectedTimezone();
+            const offsetHours = timezoneOffsets[selectedTimezone] || -8;
+            
+            // Convert from Pacific Time to selected timezone
+            const pacificOffset = -8;
+            const offsetDifference = offsetHours - pacificOffset;
+            
+            const adjustedDate = new Date(date.getTime() + (offsetDifference * 60 * 60 * 1000));
+            
+            return adjustedDate.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        // Format date for display
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        // Load available slots for selected date
+        function loadSlotsForDate(selectedDate) {
+            const slotsContainer = document.getElementById('slotsContainer');
+            const timeSlotsHeader = document.getElementById('timeSlotsHeader');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Update header with selected date
+            const selectedDateObj = new Date(selectedDate + 'T00:00:00');
+            const formattedDate = selectedDateObj.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric'
+            });
+            timeSlotsHeader.textContent = formattedDate;
+            
+            // Clear any previous error messages
+            errorMessage.style.display = 'none';
+            
+            // Filter slots for the selected date
+            const dateSlots = appointmentData.filter(slot => {
+                const slotDate = new Date(slot.start).toISOString().split('T')[0];
+                return slotDate === selectedDate;
+            });
+
+            // Clear previous slots
+            slotsContainer.innerHTML = '';
+
+            if (dateSlots.length === 0) {
+                slotsContainer.innerHTML = '<div class="no-slots">Fully booked for this day.<br>We hold limited urgent slots — please <a href="sms://2064081085&body=We\'re excited to connect through texting! Texting is convenient, but it is not the safest method for sharing sensitive details like insurance information or birth dates. For secure communications, the next message will have a link to our portal.   Send THIS text and then &quot;yes&quot; to affirm your understanding. Let us know how we can help you." class="contact">text</a> or <a href="tel://2064081085" class="contact">call</a> us if your issue is time-sensitive.</div>';
+                return;
+            }
+
+            // Sort slots by time
+            dateSlots.sort((a, b) => new Date(a.start) - new Date(b.start));
+
+            // Create slot elements
+            dateSlots.forEach((slot, index) => {
+                const slotElement = document.createElement('div');
+                slotElement.className = 'time-slot';
+                slotElement.textContent = formatTime(slot.start);
+                slotElement.dataset.slotIndex = index;
+                slotElement.dataset.start = slot.start;
+                slotElement.dataset.end = slot.end;
+                
+                slotElement.addEventListener('click', () => selectSlot(slotElement, slot));
+                
+                slotsContainer.appendChild(slotElement);
+            });
+        }
+
+        // Select a time slot
+        function selectSlot(slotElement, slot) {
+            // Remove previous selection
+            document.querySelectorAll('.time-slot.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // Select current slot
+            slotElement.classList.add('selected');
+            selectedSlot = slot;
+
+            // Send message to parent when time is picked (delay to get proper scroll position)
+            setTimeout(() => {
+                const confirmationElement = document.getElementById('confirmation');
+                const confirmationRect = confirmationElement.getBoundingClientRect();
+                const scrollNeeded = Math.max(0, confirmationRect.top - 20);
+                const message = {
+                    type: "timePicked",
+                    time: formatTime(slot.start),
+                    date: formatDate(slot.start),
+                    scrollNeeded: scrollNeeded
+                };
+                console.log("⏰ Sending timePicked message:", message);
+                if (window.parent !== window) {
+                    window.parent.postMessage(message, "*");
+                }
+            }, 100);
+
+            // Show confirmation
+            showConfirmation(slot);
+        }
+
+        // Show confirmation dialog
+        function showConfirmation(slot) {
+            const confirmation = document.getElementById('confirmation');
+            const confirmationText = document.getElementById('confirmationText');
+            
+            const startTime = formatTime(slot.start);
+            const endTime = formatTime(slot.end);
+            const date = formatDate(slot.start);
+            
+            confirmationText.textContent = `${date} from ${startTime} to ${endTime}`;
+            
+            confirmation.classList.add('show');
+            
+            // Note: Scroll handling is now managed by parent window via iframe messaging
+        }
+
+        // Confirm the appointment
+        function confirmAppointment() {
+            if (!selectedSlot) return;
+
+            // Send message to parent when "continue to form" is clicked
+            const confirmationElement = document.getElementById('confirmation');
+            const confirmationRect = confirmationElement.getBoundingClientRect();
+            const scrollNeeded = Math.max(0, confirmationRect.top - 20);
+            
+            // Create ISO timestamp strings in Pacific time
+            const startTime = convertToPacificISO(selectedSlot.start);
+            const endTime = convertToPacificISO(selectedSlot.end);
+            
+            // Calculate duration in minutes
+            const durationMs = new Date(selectedSlot.end) - new Date(selectedSlot.start);
+            const duration = Math.round(durationMs / (1000 * 60)); // Convert to minutes
+            
+            // Create slot object with required IDs
+            const slotInfo = {
+                facility_id: 10277771,
+                provider_id: 10193404,
+                resource_id: 10191884
+            };
+            
+            // Create appointment JSON object
+            const appointmentJson = {
+                startTime: startTime,
+                endTime: endTime,
+                duration: duration,
+                slotInfo: slotInfo
+            };
+            
+            console.log("📋 Appointment JSON created:", appointmentJson);
+            
+            const message = {
+                type: "continueToForm",
+                appointment: appointmentJson,
+                scrollNeeded: scrollNeeded
+            };
+            console.log("✅ Sending continueToForm message:", message);
+            if (window.parent !== window) {
+                window.parent.postMessage(message, "*");
+            }
+
+            // Here you would typically make an API call to book the appointment
+            // For now, we'll just show a success message
+            
+            const confirmation = document.getElementById('confirmation');
+            confirmation.innerHTML = `
+                <h4 style="color: #267a87;">Appointment Confirmed!</h4>
+                <p style="color: #319eaf;">Your appointment has been successfully scheduled for ${formatDate(selectedSlot.start)} from ${formatTime(selectedSlot.start)} to ${formatTime(selectedSlot.end)}.</p>
+                <p style="color: #319eaf; font-size: 14px;">You will receive a confirmation email shortly.</p>
+            `;
+
+            // Reset after 3 seconds
+            setTimeout(() => {
+                resetSelection();
+            }, 3000);
+        }
+
+        // Cancel selection
+        function cancelSelection() {
+            // Send message to parent when "choose another time" is clicked
+            const calendarElement = document.querySelector('.calendar-section');
+            const calendarRect = calendarElement.getBoundingClientRect();
+            const scrollNeeded = Math.max(0, calendarRect.top - 20);
+            const message = {
+                type: "chooseAnotherTime",
+                scrollNeeded: scrollNeeded
+            };
+            console.log("🔄 Sending chooseAnotherTime message:", message);
+            if (window.parent !== window) {
+                window.parent.postMessage(message, "*");
+            }
+            
+            resetSelection();
+        }
+
+        // Reset selection
+        function resetSelection() {
+            selectedSlot = null;
+            selectedDate = null;
+            
+            // Remove selection from slots
+            document.querySelectorAll('.time-slot.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // Hide confirmation and time slots
+            const confirmation = document.getElementById('confirmation');
+            const timeSlotsSection = document.querySelector('.time-slots');
+            const calendarSection = document.querySelector('.calendar-section');
+            
+            confirmation.classList.remove('show');
+            timeSlotsSection.classList.remove('show');
+            calendarSection.classList.remove('has-slots');
+            
+            // Re-render calendar to remove date selection
+            renderCalendar();
+        }
+
+        // Setup timezone change handler
+        function setupTimezoneHandler() {
+            const timezoneSelect = document.getElementById('timezoneSelect');
+            timezoneSelect.addEventListener('change', function() {
+                // Refresh calendar to update "today" indicator
+                renderCalendar();
+                
+                // Refresh time slots if a date is selected
+                if (selectedDate) {
+                    loadSlotsForDate(selectedDate);
+                }
+            });
+        }
+
+        // Update timezone options with current times
+        function updateTimezoneOptions() {
+            const timezoneSelect = document.getElementById('timezoneSelect');
+            if (!timezoneSelect || !timezoneSelect.options) return;
+            const options = timezoneSelect.options;
+            
+            const timezones = {
+                'Hawaiʻi Time – US & Canada': 'Pacific/Honolulu',
+                'Pacific Time – US & Canada': 'America/Los_Angeles',
+                'Mountain Time – US & Canada': 'America/Denver', 
+                'Central Time – US & Canada': 'America/Chicago',
+                'Eastern Time – US & Canada': 'America/New_York',
+                'Alaska Time – US & Canada': 'America/Anchorage',
+                'Atlantic Time – Canada': 'America/Halifax',
+                'Newfoundland Time – Canada': 'America/St_Johns'
+            };
+            
+            for (let i = 1; i < options.length; i++) { // Skip first "Please Select" option
+                const option = options[i];
+                const baseText = option.value;
+                
+                if (timezones[baseText]) {
+                    try {
+                        const now = new Date();
+                        const timeInZone = now.toLocaleTimeString('en-US', {
+                            timeZone: timezones[baseText],
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                        });
+                        
+                        option.textContent = `${baseText} (${timeInZone})`;
+                    } catch (e) {
+                        // Fallback if timezone is not supported
+                        option.textContent = baseText;
+                    }
+                }
+            }
+        }
+
+        // Show skeleton loading state
+        function showSkeletonLoading() {
+            const skeleton = document.getElementById('skeletonCalendar');
+            const realCalendar = document.getElementById('realCalendar');
+            
+            skeleton.classList.add('show');
+            realCalendar.style.display = 'none';
+        }
+
+        // Hide skeleton loading state
+        function hideSkeletonLoading() {
+            const skeleton = document.getElementById('skeletonCalendar');
+            const realCalendar = document.getElementById('realCalendar');
+            
+            skeleton.classList.remove('show');
+            realCalendar.style.display = 'block';
+        }
+
+        // Check if user is online
+        function isOnline() {
+            return navigator.onLine;
+        }
+
+        // Show offline message
+        function showOfflineMessage() {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.className = 'error-message offline';
+            errorMessage.innerHTML = `
+                You appear to be offline. Please check your internet connection and try again.
+                <br><button class="retry-button" onclick="retryConnection()">Try Again</button>
+                <div class="retry-progress" id="retryProgress" style="display: none;"></div>
+            `;
+            errorMessage.style.display = 'block';
+        }
+
+        // Show network error message
+        function showNetworkError() {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.className = 'error-message';
+            errorMessage.innerHTML = `
+                Unable to load appointment slots after automatic retries. Please check your connection and try again.
+                <br><button class="retry-button" onclick="retryConnection()">Try Again</button>
+                <div class="retry-progress" id="retryProgress" style="display: none;"></div>
+            `;
+            errorMessage.style.display = 'block';
+        }
+
+        // Retry connection function with progress indication
+        async function retryConnection() {
+            const retryButton = document.querySelector('.retry-button');
+            if (retryButton) {
+                retryButton.disabled = true;
+                retryButton.textContent = 'Retrying...';
+                retryButton.classList.remove('success');
+            }
+            
+            showSkeletonLoading();
+            hideErrorMessage();
+            
+            try {
+                // Enable retry progress display for manual retries
+                await fetchAppointmentData(true);
+                hideSkeletonLoading();
+                
+                if (retryButton) {
+                    retryButton.textContent = 'Success!';
+                    retryButton.classList.add('success');
+                    setTimeout(() => {
+                        if (retryButton) {
+                            retryButton.disabled = false;
+                            retryButton.textContent = 'Try Again';
+                            retryButton.classList.remove('success');
+                        }
+                    }, 1000);
+                }
+            } catch (error) {
+                hideSkeletonLoading();
+                
+                if (retryButton) {
+                    retryButton.disabled = false;
+                    retryButton.textContent = 'Try Again';
+                    retryButton.classList.remove('success');
+                }
+            }
+        }
+
+        // Hide error message
+        function hideErrorMessage() {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.style.display = 'none';
+        }
+
+        // Utility function to delay execution
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Show retry progress to user
+        function showRetryProgress(attempt, maxRetries, delayMs) {
+            const progressElement = document.getElementById('retryProgress');
+            if (progressElement) {
+                progressElement.style.display = 'block';
+                progressElement.textContent = `Automatic retry ${attempt}/${maxRetries} in ${Math.ceil(delayMs/1000)} seconds...`;
+            }
+        }
+
+        // Hide retry progress
+        function hideRetryProgress() {
+            const progressElement = document.getElementById('retryProgress');
             if (progressElement) {
                 progressElement.style.display = 'none';
             }
@@ -513,5 +1711,128 @@ Modified
                 
                 // Hide any previous error messages and retry progress
                 hideErrorMessage();
+                hideRetryProgress();
+                
+                // Re-render calendar with new data
+                renderCalendar();
+                
+                // Refresh time slots if a date is selected
+                if (selectedDate) {
+                    loadSlotsForDate(selectedDate);
+                }
+                
+                return filteredSlots;
+            } catch (error) {
+                console.error('Error fetching appointment data after retries:', error);
+                
+                // Hide retry progress
+                hideRetryProgress();
+                
+                // Show appropriate error message based on error type
+                if (error.message === 'OFFLINE' || !isOnline()) {
+                    showOfflineMessage();
+                } else if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+                    showNetworkError();
+                } else {
+                    showNetworkError();
+                }
+                
+                return [];
+            }
+        }
 
-Loading... - Replit
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Show skeleton loading
+            showSkeletonLoading();
+            
+            // Fetch appointment data first
+            await fetchAppointmentData();
+            
+            // Hide skeleton and show real calendar
+            hideSkeletonLoading();
+            
+            initializeCalendar();
+            setupTimezoneHandler();
+            updateTimezoneOptions();
+            
+            // Update times every minute
+            setInterval(updateTimezoneOptions, 60000);
+            
+            // Refresh appointment data every 5 minutes
+            setInterval(fetchAppointmentData, 300000);
+            
+            // Add online/offline event listeners
+            window.addEventListener('online', handleOnline);
+            window.addEventListener('offline', handleOffline);
+        });
+
+        // Handle coming back online
+        function handleOnline() {
+            console.log('Connection restored');
+            hideErrorMessage();
+            // Automatically try to fetch data when back online
+            fetchAppointmentData().then(() => {
+                hideSkeletonLoading();
+            });
+        }
+
+        // Handle going offline
+        function handleOffline() {
+            console.log('Connection lost');
+            showOfflineMessage();
+        }
+
+        // Expose functions for external configuration
+        window.AppointmentPicker = {
+            // Function to manually refresh appointment data
+            refreshAppointmentData: async function() {
+                return await fetchAppointmentData();
+            },
+            
+            // Function to update appointment data (for manual override if needed)
+            updateAppointmentData: function(newData) {
+                if (Array.isArray(newData)) {
+                    appointmentData.length = 0; // Clear existing data
+                    appointmentData.push(...newData); // Add new data
+                    
+                    // Re-render calendar
+                    renderCalendar();
+                    
+                    // Reload slots for current date
+                    if (selectedDate) {
+                        loadSlotsForDate(selectedDate);
+                    }
+                }
+            },
+            
+            // Function to get selected appointment
+            getSelectedAppointment: function() {
+                return selectedSlot;
+            },
+            
+            // Function to reset the picker
+            reset: function() {
+                resetSelection();
+                initializeCalendar();
+            }
+        };
+
+        // Height helper function for iframe communication
+        function postHeight() {
+            if (window.parent !== window) {
+                const h = document.documentElement.scrollHeight;
+                const message = { type: "pickerHeight", value: h };
+                console.log("📏 Sending height message:", message);
+                window.parent.postMessage(message, "*");  // ⚠️ lock origin in prod
+            }
+        }
+
+        /* send once after DOM ready … */
+        document.addEventListener("DOMContentLoaded", postHeight);
+
+        /* …and every time something inside grows/shrinks */
+        new ResizeObserver(postHeight).observe(document.documentElement);
+    </script>
+</body>
+</html>
