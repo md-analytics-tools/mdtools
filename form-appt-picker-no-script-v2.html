@@ -1353,20 +1353,23 @@
             const duration = Math.round(durationMs / (1000 * 60)); // Convert to minutes
             
             // Create slot object with required IDs
-            const slot = {
+            const slotInfo = {
                 facility_id: 10277771,
                 provider_id: 10193404,
                 resource_id: 10191884
             };
             
+            // Create appointment JSON and stringify it
+            const appointmentJson = {
+                startTime: startTime,
+                endTime: endTime,
+                duration: duration,
+                slotInfo: slotInfo
+            };
+            
             const message = {
                 type: "continueToForm",
-                appointment: {
-                    startTime: startTime,
-                    endTime: endTime,
-                    duration: duration,
-                    slot: slot
-                },
+                appointment: JSON.stringify(appointmentJson),
                 scrollNeeded: scrollNeeded
             };
             console.log("✅ Sending continueToForm message:", message);
