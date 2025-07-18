@@ -1123,25 +1123,27 @@ function selectDate(dateStr) {
     
     // On mobile, ask parent to scroll to bring time slots into view
     setTimeout(() => {
-        if (window.innerWidth <= 768) { // Mobile breakpoint
-            const timeSlotsRect = timeSlotsSection.getBoundingClientRect();
-            const offset = timeSlotsRect.top - 20; // 20px padding from top
+  if (window.innerWidth <= 768) {            // mobile
+     const rect      = timeSlotsSection.getBoundingClientRect();
 
-            if (window.parent !== window) {
-                // ← replace your window.scrollTo here
-                window.parent.postMessage(
-                    { type: 'pickerScroll', offset },
-                    '*'  // ideally lock this down to your parent’s exact origin
-                );
-            } else {
-                // fallback for standalone testing
-                window.scrollTo({
-                    top: window.scrollY + offset,
-                    behavior: 'smooth'
-                });
-            }
-        }
-    }, 400); // Wait for time‑slots animation to complete
+     /* ---------- NEW: ensure bottom of list is visible ---------- */
+     const topPad     = 20;                               // space above list
+     const bottomPad  = 20;                               // keep button off hard edge
+     const offsetTop  = rect.top - topPad;                // what you already had
+     const overhang   = (rect.bottom + bottomPad) - window.innerHeight;
+     const offset     = offsetTop + Math.max(0, overhang); // push farther if needed
+     /* ----------------------------------------------------------- */
+
+     if (window.parent !== window) {
+       window.parent.postMessage(
+         { type: 'pickerScroll', offset },
+         '*'
+       );
+     } else {
+       window.scrollTo({ top: window.scrollY + offset, behavior: 'smooth' });
+     }
+  }
+}, 400);
 }
 
         // Timezone offset mappings
