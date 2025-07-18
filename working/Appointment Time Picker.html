@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Appointment Time Picker</title>
+    <!-- Updated: 2025-07-14 05:39 -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: kyrial-display-pro, 'Helvetica', Arial, sans-serif;
+            background-color: #ffffff;
+            color: #267a87;
+            line-height: 1.6;
+        }
+
+        .appointment-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #ffffff;
+            border: none;
+            box-shadow: none;
+            border-radius: 8px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 17px;
+            border-bottom: 1px solid #e6e6e6;
+        }
+
+        .header h1 {
+            color: #267a87;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #319eaf;
+            font-size: 16px;
+        }
+
+        .calendar-section {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 15px;
+            margin-bottom: 0px;
+        }
+
+        .calendar-section:not(.has-slots) {
+            grid-template-columns: 1fr;
+        }
+
+        .calendar-section:not(.has-slots) .time-slots {
+            display: none !important;
+            position: absolute;
+            visibility: hidden;
+        }
+
+        .date-picker {
+            background: #ffffff;
+            padding: 5px;
+            border-radius: 8px;
+            border: none;
+        }
+
+        .date-picker h3 {
+            color: #267a87;
+            margin-bottom: 13px;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .calendar-widget {
+            background: #ffffff;
+            border-radius: 6px;
+            border: none;
+            overflow: hidden;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 20px;
+            background: #ffffff;
+            color: #267a87;
+            border: none;
+            position: relative;
+        }
+
+        .calendar-nav {
+            background: none;
+            border: none;
+            color: #267a87;
+            cursor: pointer;
+            font-size: 29px;
+            padding: 10px 15px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+            position: absolute;
+        }
+
+        .calendar-nav:first-child {
+            left: 25%;
+        }
+
+        .calendar-nav:last-child {
+            right: 25%;
+        }
+
+        .calendar-nav:hover {
+            background: rgba(38, 122, 135, 0.1);
+        }
+
+        .calendar-nav:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .calendar-title {
+            font-size: 22px;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .calendar-grid {
+            padding: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .days-grid {
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .days-grid.slide-left {
+            transform: translateX(-100%);
+        }
+
+        .days-grid.slide-right {
+            transform: translateX(100%);
+        }
+
+        .calendar-title {
+            transition: opacity 0.2s ease;
+        }
+
+        .calendar-title.fade-out {
+            opacity: 0;
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            margin-bottom: 10px;
+        }
+
+        .weekday {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #319eaf;
+            padding: 8px 4px;
+            text-transform: uppercase;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            color: #267a87;
+            background: transparent;
+            border: none;
+            width: 44px;
+            height: 44px;
+        }
+
+        .calendar-day.today::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: #267a87;
+            border-radius: 50%;
+        }
+
+
+
+        .calendar-day.other-month {
+            color: #d0d6d6;
+            cursor: not-allowed;
+            font-weight: normal;
+        }
+
+        .calendar-day.past {
+            color: #d0d6d6;
+            cursor: not-allowed;
+            font-weight: normal;
+        }
+
+        .calendar-day:not(.has-slots):not(.other-month):not(.past) {
+            color: #267A87;
+            font-weight: normal;
+        }
+
+        .calendar-day.has-slots {
+            font-weight: bold;
+            background: #d0d6d6;
+            color: #267A87;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+        }
+
+
+
+        .calendar-day.selected {
+            background: #00a69c !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+        }
+
+
+
+
+
+        .time-slots {
+            background: #ffffff;
+            opacity: 0;
+            transform: translateX(30px) scale(0.95);
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            pointer-events: none;
+            visibility: hidden;
+        }
+
+        .time-slots.show {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+            pointer-events: all;
+            visibility: visible;
+        }
+
+        /* Timezone selector styles */
+        .timezone-section {
+            margin-top: 0px;
+            padding: 5px 0;
+        }
+
+        .calendar-section.has-slots ~ .timezone-section .form-dropdown {
+            width: 320px;
+            max-width: 320px;
+        }
+
+        .calendar-section.has-slots + .timezone-section {
+            margin-top: 15px;
+        }
+
+        .timezone-section h3 {
+            color: #267a87;
+            margin-bottom: 13px;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .form-dropdown {
+            border-radius: 6px;
+            appearance: none;
+            margin: 0;
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #267A87;
+            background: #ffffff;
+            color: #267a87;
+            font-family: kyrial-display-pro, 'Helvetica', Arial, sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+            background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'><path fill='%23267a87' d='M3.5 5L7 8.5L10.5 5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 40px;
+        }
+
+        .form-dropdown:hover {
+            border-color: #319eaf;
+        }
+
+        .form-dropdown:focus {
+            outline: none;
+            border-color: #267a87;
+            box-shadow: 0 0 0 2px rgba(38, 122, 135, 0.1);
+        }
+
+        .time-slots h3 {
+            color: #267a87;
+            margin-bottom: 17px;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .slots-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .time-slot {
+            padding: 12px 16px;
+            border: 1px solid #267A87;
+            border-radius: 6px;
+            background: #ffffff;
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            color: #267a87;
+            transition: all 0.3s ease;
+            position: relative;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: none;
+        }
+
+        .time-slots.show .time-slot {
+            animation: slideInUp 0.4s ease-out forwards;
+        }
+
+        .time-slots.show .time-slot:nth-child(1) { animation-delay: 0.1s; }
+        .time-slots.show .time-slot:nth-child(2) { animation-delay: 0.15s; }
+        .time-slots.show .time-slot:nth-child(3) { animation-delay: 0.2s; }
+        .time-slots.show .time-slot:nth-child(4) { animation-delay: 0.25s; }
+        .time-slots.show .time-slot:nth-child(5) { animation-delay: 0.3s; }
+        .time-slots.show .time-slot:nth-child(6) { animation-delay: 0.35s; }
+
+        @keyframes slideInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .time-slots.show .time-slot:hover {
+            border-color: #319eaf;
+            background: #f0f9fa;
+            transform: translateY(-1px);
+        }
+
+        .time-slot.selected {
+            background: #00a69c;
+            color: #ffffff;
+            border-color: #00a69c;
+            font-weight: bold;
+        }
+
+        .time-slot.selected:hover {
+            background: #00a69c;
+            border-color: #00a69c;
+        }
+
+        .no-slots {
+            text-align: center;
+            padding: 40px;
+            color: #267A87;
+            font-size: 16px;
+        }
+
+        .contact {
+            color: #2e2b82;
+            text-decoration: underline;
+        }
+
+        .contact:hover {
+            color: #2e2b82;
+            text-decoration: none;
+        }
+
+        .confirmation {
+            background: #f0f9fa;
+            border: 1px solid #319eaf;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .confirmation.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .confirmation h4 {
+            color: #267a87;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .confirmation p {
+            color: #319eaf;
+            margin-bottom: 15px;
+        }
+
+        .btn-confirm {
+            background: #00a69c;
+            color: #ffffff;
+            border: 2px solid #00a69c;
+            padding: 11px 23px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-family: kyrial-display-pro, 'Helvetica', Arial, sans-serif;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .btn-confirm:hover {
+            background: #00a69c;
+            border-color: #00a69c;
+            color: #ffffff;
+        }
+
+        .btn-cancel {
+            background: #ffffff;
+            color: #319eaf;
+            border: 2px solid #319eaf;
+            padding: 10px 22px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-family: kyrial-display-pro, 'Helvetica', Arial, sans-serif;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .confirmation:has(.btn-cancel:hover) .btn-confirm {
+            background: #ffffff;
+            color: #319eaf;
+            border: 2px solid #319eaf;
+            font-weight: normal;
+        }
+
+        .btn-cancel:hover {
+            background: #00a69c;
+            color: #ffffff;
+            border: 2px solid #00a69c;
+            font-weight: bold;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #319eaf;
+        }
+
+        .error-message {
+            background: #ffe6e6;
+            border: 1px solid #ff9999;
+            color: #cc0000;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .error-message.offline {
+            background: #fff3cd;
+            border: 1px solid #ffecb5;
+            color: #856404;
+        }
+
+        .retry-button {
+            background: #267a87;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 14px;
+            transition: background 0.2s ease;
+        }
+
+        .retry-button:hover {
+            background: #319eaf;
+        }
+
+        .retry-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .retry-button.success {
+            background: #28a745;
+        }
+
+        .retry-progress {
+            margin-top: 10px;
+            color: #267a87;
+            font-size: 13px;
+            font-style: italic;
+        }
+
+        /* Skeleton loading styles */
+        .skeleton-calendar {
+            display: none;
+        }
+
+        .skeleton-calendar.show {
+            display: block;
+        }
+
+        .skeleton-header {
+            background: #f0f9fa;
+            height: 40px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .skeleton-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            margin-bottom: 10px;
+        }
+
+        .skeleton-weekday {
+            background: #f0f9fa;
+            height: 30px;
+            border-radius: 4px;
+        }
+
+        .skeleton-day {
+            background: #f0f9fa;
+            height: 44px;
+            border-radius: 4px;
+            aspect-ratio: 1;
+        }
+
+        .skeleton-day:nth-child(7n+1),
+        .skeleton-day:nth-child(7n+2),
+        .skeleton-day:nth-child(7n+3) {
+            animation-delay: 0.1s;
+        }
+
+        .skeleton-day:nth-child(7n+4),
+        .skeleton-day:nth-child(7n+5) {
+            animation-delay: 0.2s;
+        }
+
+        .skeleton-day:nth-child(7n+6),
+        .skeleton-day:nth-child(7n) {
+            animation-delay: 0.3s;
+        }
+
+        /* Skeleton animation */
+        .skeleton-header,
+        .skeleton-weekday,
+        .skeleton-day {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .skeleton-header::before,
+        .skeleton-weekday::before,
+        .skeleton-day::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.6),
+                transparent
+            );
+            animation: skeleton-shimmer 1.5s infinite;
+        }
+
+        @keyframes skeleton-shimmer {
+            0% {
+                left: -100%;
+            }
+            100% {
+                left: 100%;
+            }
+        }
+
+        /* Hide real calendar when skeleton is showing */
+        .calendar-widget.skeleton-loading {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .appointment-container {
+                margin: 10px;
+                padding: 15px;
+            }
+
+            .calendar-section {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .calendar-widget {
+                border: none;
+            }
+
+            .calendar-header {
+                padding: 12px 15px;
+            }
+
+            .calendar-title {
+                font-size: 19px;
+            }
+
+            .calendar-nav {
+                font-size: 24px;
+                padding: 8px 12px;
+            }
+
+            .calendar-nav:first-child {
+                left: 20%;
+            }
+
+            .calendar-nav:last-child {
+                right: 20%;
+            }
+
+            .calendar-grid {
+                padding: 12px;
+            }
+
+            .weekday {
+                font-size: 11px;
+                padding: 6px 2px;
+            }
+
+            .calendar-day {
+                font-size: 14px;
+                width: 40px;
+                height: 40px;
+            }
+
+            .calendar-day.has-slots,
+            .calendar-day.selected {
+                width: 38px;
+                height: 38px;
+            }
+
+            .slots-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 10px;
+            }
+
+            .time-slot {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+
+            .form-dropdown {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .appointment-container {
+                margin: 5px;
+                padding: 10px;
+            }
+
+            .calendar-header {
+                padding: 10px 12px;
+            }
+
+            .calendar-title {
+                font-size: 18px;
+            }
+
+            .calendar-nav {
+                font-size: 26px;
+                padding: 8px 12px;
+                min-width: 44px;
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .calendar-nav:first-child {
+                left: 5%;
+            }
+
+            .calendar-nav:last-child {
+                right: 5%;
+            }
+
+            .calendar-grid {
+                padding: 10px;
+            }
+
+            .weekday {
+                font-size: 10px;
+                padding: 5px 1px;
+            }
+
+            .calendar-day {
+                font-size: 14px;
+                width: 36px;
+                height: 36px;
+            }
+
+            .calendar-day.has-slots,
+            .calendar-day.selected {
+                width: 34px;
+                height: 34px;
+            }
+
+            .slots-grid {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                gap: 8px;
+            }
+
+            .time-slot {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+
+            .form-dropdown {
+                max-width: 100%;
+                font-size: 13px;
+                padding: 10px 12px;
+                padding-right: 35px;
+            }
+
+            .confirmation {
+                text-align: left;
+            }
+
+            .btn-confirm, .btn-cancel {
+                display: block;
+                width: 100%;
+                margin: 8px 0;
+                margin-right: 0;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="appointment-container">
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="calendar-section">
+            <div class="date-picker">
+                <h3>Select a Date & Time</h3>
+                
+                <!-- Skeleton calendar for loading state -->
+                <div class="skeleton-calendar" id="skeletonCalendar">
+                    <div class="skeleton-header"></div>
+                    <div class="skeleton-grid">
+                        <div class="skeleton-weekday"></div>
+                        <div class="skeleton-weekday"></div>
+                        <div class="skeleton-weekday"></div>
+                        <div class="skeleton-weekday"></div>
+                        <div class="skeleton-weekday"></div>
+                        <div class="skeleton-weekday"></div>
+                        <div class="skeleton-weekday"></div>
+                    </div>
+                    <div class="skeleton-grid">
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                        <div class="skeleton-day"></div>
+                    </div>
+                </div>
+                
+                <!-- Real calendar -->
+                <div class="calendar-widget" id="realCalendar">
+                    <div class="calendar-header">
+                        <button class="calendar-nav" id="prevMonth">‹</button>
+                        <h4 class="calendar-title" id="monthTitle"></h4>
+                        <button class="calendar-nav" id="nextMonth">›</button>
+                    </div>
+                    <div class="calendar-grid">
+                        <div class="weekdays">
+                            <div class="weekday">Sun</div>
+                            <div class="weekday">Mon</div>
+                            <div class="weekday">Tue</div>
+                            <div class="weekday">Wed</div>
+                            <div class="weekday">Thu</div>
+                            <div class="weekday">Fri</div>
+                            <div class="weekday">Sat</div>
+                        </div>
+                        <div class="days-grid" id="daysGrid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="time-slots">
+                <h3 id="timeSlotsHeader">Available Times</h3>
+                <div id="slotsContainer" class="slots-grid">
+                    <div class="no-slots">Please select a date to view available times</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="timezone-section">
+            <h3>Time Zone</h3>
+            <select class="form-dropdown" id="timezoneSelect" name="timezone" aria-label="Time Zone">
+                <option value="">Please Select</option>
+                <option value="Hawaiʻi Time – US & Canada">Hawaiʻi Time – US & Canada</option>
+                <option value="Pacific Time – US & Canada" selected>Pacific Time – US & Canada</option>
+                <option value="Mountain Time – US & Canada">Mountain Time – US & Canada</option>
+                <option value="Central Time – US & Canada">Central Time – US & Canada</option>
+                <option value="Eastern Time – US & Canada">Eastern Time – US & Canada</option>
+                <option value="Alaska Time – US & Canada">Alaska Time – US & Canada</option>
+                <option value="Atlantic Time – Canada">Atlantic Time – Canada</option>
+                <option value="Newfoundland Time – Canada">Newfoundland Time – Canada</option>
+            </select>
+        </div>
+
+        <div class="confirmation" id="confirmation">
+            <h4>📝 You're Penciled In For:</h4>
+            <p id="confirmationText"></p>
+            <h4 style="color: #267a87; margin: 15px 0 10px 0; font-size: 16px; font-weight: 500;">Your appointment time will be reserved after you complete the intake form.</h4>
+            <button class="btn-confirm" onclick="confirmAppointment()">Continue to Form</button>
+            <button class="btn-cancel" onclick="cancelSelection()">Choose Another Time</button>
+        </div>
+    </div>
+
+    <script>
+        // Live appointment data - fetched from API
+        let appointmentData = [];
+
+        let selectedSlot = null;
+        let currentMonth = new Date();
+        let selectedDate = null;
+
+        // Initialize the calendar
+        function initializeCalendar() {
+            const today = new Date();
+            currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            
+            renderCalendar();
+            setupCalendarNavigation();
+        }
+
+        // Get dates that have available appointments
+        function getAvailableDates() {
+            const availableDates = new Set();
+            appointmentData.forEach(slot => {
+                const slotDate = new Date(slot.start).toISOString().split('T')[0];
+                availableDates.add(slotDate);
+            });
+            return availableDates;
+        }
+
+        // Render the calendar
+        function renderCalendar() {
+            const monthTitle = document.getElementById('monthTitle');
+            
+            // Set month title
+            monthTitle.textContent = currentMonth.toLocaleDateString('en-US', {
+                month: 'long',
+                year: 'numeric'
+            });
+            
+            // Render calendar content
+            renderCalendarContent();
+            
+            // Update navigation button states
+            updateNavButtons();
+        }
+
+        // Render calendar content (days grid only)
+        function renderCalendarContent() {
+            const daysGrid = document.getElementById('daysGrid');
+            const today = new Date();
+            const availableDates = getAvailableDates();
+            
+            // Clear previous days
+            daysGrid.innerHTML = '';
+            
+            // Get first day of month and number of days
+            const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+            const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+            
+            // Get current date in selected timezone
+            const todayStr = getCurrentDateInTimezone();
+            
+            // Generate 42 days (6 weeks)
+            for (let i = 0; i < 42; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                
+                const dayButton = document.createElement('button');
+                dayButton.className = 'calendar-day';
+                dayButton.textContent = date.getDate();
+                
+                const dateStr = date.toISOString().split('T')[0];
+                const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
+                const isPast = date < today;
+                const hasSlots = availableDates.has(dateStr);
+                const isSelected = selectedDate === dateStr;
+                const isToday = dateStr === todayStr;
+                
+                // Add appropriate classes
+                if (!isCurrentMonth) {
+                    dayButton.classList.add('other-month');
+                } else if (isPast && !isToday) {
+                    dayButton.classList.add('past');
+                } else {
+                    if (isToday) {
+                        dayButton.classList.add('today');
+                    }
+                    if (hasSlots) {
+                        dayButton.classList.add('has-slots');
+                    }
+                    if (isSelected) {
+                        dayButton.classList.add('selected');
+                    }
+                    
+                    // Add click handler for current and future dates
+                    dayButton.addEventListener('click', () => selectDate(dateStr));
+                }
+                
+                daysGrid.appendChild(dayButton);
+            }
+        }
+
+        // Setup calendar navigation
+        function setupCalendarNavigation() {
+            document.getElementById('prevMonth').addEventListener('click', () => {
+                animateMonthTransition('prev');
+            });
+            
+            document.getElementById('nextMonth').addEventListener('click', () => {
+                animateMonthTransition('next');
+            });
+        }
+
+        // Animate month transition
+        function animateMonthTransition(direction) {
+            const daysGrid = document.getElementById('daysGrid');
+            const monthTitle = document.getElementById('monthTitle');
+            
+            // Disable navigation during animation
+            const prevButton = document.getElementById('prevMonth');
+            const nextButton = document.getElementById('nextMonth');
+            prevButton.disabled = true;
+            nextButton.disabled = true;
+            
+            // Start fade out title
+            monthTitle.classList.add('fade-out');
+            
+            // Start slide animation
+            if (direction === 'next') {
+                daysGrid.classList.add('slide-left');
+            } else {
+                daysGrid.classList.add('slide-right');
+            }
+            
+            // After slide out completes, update content and slide in
+            setTimeout(() => {
+                // Update month
+                if (direction === 'next') {
+                    currentMonth.setMonth(currentMonth.getMonth() + 1);
+                } else {
+                    currentMonth.setMonth(currentMonth.getMonth() - 1);
+                }
+                
+                // Update title
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+                monthTitle.textContent = `${monthNames[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`;
+                
+                // Reset grid position for slide in from opposite side
+                daysGrid.style.transition = 'none';
+                if (direction === 'next') {
+                    daysGrid.style.transform = 'translateX(100%)';
+                } else {
+                    daysGrid.style.transform = 'translateX(-100%)';
+                }
+                
+                // Re-render calendar content
+                renderCalendarContent();
+                
+                // Force reflow then animate in
+                daysGrid.offsetHeight;
+                daysGrid.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                daysGrid.style.transform = 'translateX(0)';
+                
+                // Remove animation classes
+                daysGrid.classList.remove('slide-left', 'slide-right');
+                
+                // Fade in title
+                setTimeout(() => {
+                    monthTitle.classList.remove('fade-out');
+                }, 50);
+                
+                // Re-enable navigation
+                setTimeout(() => {
+                    daysGrid.style.transition = '';
+                    daysGrid.style.transform = '';
+                    updateNavButtons();
+                }, 300);
+            }, 300);
+        }
+
+        // Update navigation button states
+        function updateNavButtons() {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonthNum = today.getMonth();
+            
+            const prevButton = document.getElementById('prevMonth');
+            const nextButton = document.getElementById('nextMonth');
+            
+            // Disable prev button if showing current month or earlier
+            prevButton.disabled = (
+                currentMonth.getFullYear() < currentYear ||
+                (currentMonth.getFullYear() === currentYear && currentMonth.getMonth() <= currentMonthNum)
+            );
+            
+            // Disable next button if showing 12 months ahead (optional limit)
+            const maxMonth = new Date(currentYear + 1, currentMonthNum, 1);
+            nextButton.disabled = currentMonth >= maxMonth;
+        }
+
+        // Select a date
+        function selectDate(dateStr) {
+            selectedDate = dateStr;
+            renderCalendar();
+            loadSlotsForDate(dateStr);
+            
+            // Show the time slots section and update calendar layout
+            const timeSlotsSection = document.querySelector('.time-slots');
+            const calendarSection = document.querySelector('.calendar-section');
+            timeSlotsSection.classList.add('show');
+            calendarSection.classList.add('has-slots');
+            
+            // On mobile, scroll to bring time slots to top of screen
+            setTimeout(() => {
+                if (window.innerWidth <= 768) { // Mobile breakpoint
+                    const timeSlotsRect = timeSlotsSection.getBoundingClientRect();
+                    const targetPosition = window.scrollY + timeSlotsRect.top - 20; // 20px padding from top
+                    
+                    window.scrollTo({
+                        top: Math.max(0, targetPosition),
+                        behavior: 'smooth'
+                    });
+                }
+            }, 400); // Wait for time slots animation to complete
+        }
+
+        // Timezone offset mappings
+        const timezoneOffsets = {
+            'Hawaiʻi Time – US & Canada': -10,
+            'Pacific Time – US & Canada': -8,
+            'Mountain Time – US & Canada': -7,
+            'Central Time – US & Canada': -6,
+            'Eastern Time – US & Canada': -5,
+            'Alaska Time – US & Canada': -9,
+            'Atlantic Time – Canada': -4,
+            'Newfoundland Time – Canada': -3.5
+        };
+
+        // Get selected timezone
+        function getSelectedTimezone() {
+            const timezoneSelect = document.getElementById('timezoneSelect');
+            return timezoneSelect.value || 'Pacific Time – US & Canada';
+        }
+
+        // Get current date in selected timezone
+        function getCurrentDateInTimezone() {
+            const selectedTimezone = getSelectedTimezone();
+            const timezoneMap = {
+                'Hawaiʻi Time – US & Canada': 'Pacific/Honolulu',
+                'Pacific Time – US & Canada': 'America/Los_Angeles',
+                'Mountain Time – US & Canada': 'America/Denver', 
+                'Central Time – US & Canada': 'America/Chicago',
+                'Eastern Time – US & Canada': 'America/New_York',
+                'Alaska Time – US & Canada': 'America/Anchorage',
+                'Atlantic Time – Canada': 'America/Halifax',
+                'Newfoundland Time – Canada': 'America/St_Johns'
+            };
+            
+            const timezone = timezoneMap[selectedTimezone] || 'America/Los_Angeles';
+            
+            try {
+                const now = new Date();
+                // Use Intl.DateTimeFormat to get the date in the specific timezone
+                const formatter = new Intl.DateTimeFormat('en-CA', {
+                    timeZone: timezone,
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                });
+                
+                const parts = formatter.formatToParts(now);
+                const year = parts.find(part => part.type === 'year').value;
+                const month = parts.find(part => part.type === 'month').value;
+                const day = parts.find(part => part.type === 'day').value;
+                
+                return `${year}-${month}-${day}`;
+            } catch (e) {
+                // Fallback to browser's local date
+                return new Date().toISOString().split('T')[0];
+            }
+        }
+
+        // Format time for display with timezone conversion
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            const selectedTimezone = getSelectedTimezone();
+            const offsetHours = timezoneOffsets[selectedTimezone] || -8;
+            
+            // Convert from Pacific Time to selected timezone
+            const pacificOffset = -8;
+            const offsetDifference = offsetHours - pacificOffset;
+            
+            const adjustedDate = new Date(date.getTime() + (offsetDifference * 60 * 60 * 1000));
+            
+            return adjustedDate.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        // Format date for display
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        // Load available slots for selected date
+        function loadSlotsForDate(selectedDate) {
+            const slotsContainer = document.getElementById('slotsContainer');
+            const timeSlotsHeader = document.getElementById('timeSlotsHeader');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Update header with selected date
+            const selectedDateObj = new Date(selectedDate + 'T00:00:00');
+            const formattedDate = selectedDateObj.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric'
+            });
+            timeSlotsHeader.textContent = formattedDate;
+            
+            // Clear any previous error messages
+            errorMessage.style.display = 'none';
+            
+            // Filter slots for the selected date
+            const dateSlots = appointmentData.filter(slot => {
+                const slotDate = new Date(slot.start).toISOString().split('T')[0];
+                return slotDate === selectedDate;
+            });
+
+            // Clear previous slots
+            slotsContainer.innerHTML = '';
+
+            if (dateSlots.length === 0) {
+                slotsContainer.innerHTML = '<div class="no-slots">Fully booked for this day.<br>We hold limited urgent slots — please <a href="sms://2064081085&body=We\'re excited to connect through texting! Texting is convenient, but it is not the safest method for sharing sensitive details like insurance information or birth dates. For secure communications, the next message will have a link to our portal.   Send THIS text and then &quot;yes&quot; to affirm your understanding. Let us know how we can help you." class="contact">text</a> or <a href="tel://2064081085" class="contact">call</a> us if your issue is time-sensitive.</div>';
+                return;
+            }
+
+            // Sort slots by time
+            dateSlots.sort((a, b) => new Date(a.start) - new Date(b.start));
+
+            // Create slot elements
+            dateSlots.forEach((slot, index) => {
+                const slotElement = document.createElement('div');
+                slotElement.className = 'time-slot';
+                slotElement.textContent = formatTime(slot.start);
+                slotElement.dataset.slotIndex = index;
+                slotElement.dataset.start = slot.start;
+                slotElement.dataset.end = slot.end;
+                
+                slotElement.addEventListener('click', () => selectSlot(slotElement, slot));
+                
+                slotsContainer.appendChild(slotElement);
+            });
+        }
+
+        // Select a time slot
+        function selectSlot(slotElement, slot) {
+            // Remove previous selection
+            document.querySelectorAll('.time-slot.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // Select current slot
+            slotElement.classList.add('selected');
+            selectedSlot = slot;
+
+            // Show confirmation
+            showConfirmation(slot);
+        }
+
+        // Show confirmation dialog
+        function showConfirmation(slot) {
+            const confirmation = document.getElementById('confirmation');
+            const confirmationText = document.getElementById('confirmationText');
+            
+            const startTime = formatTime(slot.start);
+            const endTime = formatTime(slot.end);
+            const date = formatDate(slot.start);
+            
+            confirmationText.textContent = `${date} from ${startTime} to ${endTime}`;
+            
+            confirmation.classList.add('show');
+            
+            // Scroll to center the confirmation in mobile view
+            setTimeout(() => {
+                if (window.innerWidth <= 768) { // Mobile breakpoint
+                    const confirmationRect = confirmation.getBoundingClientRect();
+                    const viewportHeight = window.innerHeight;
+                    const confirmationHeight = confirmationRect.height;
+                    
+                    // Calculate position to center the confirmation vertically
+                    const targetPosition = window.scrollY + confirmationRect.top - (viewportHeight / 2) + (confirmationHeight / 2);
+                    
+                    window.scrollTo({
+                        top: Math.max(0, targetPosition),
+                        behavior: 'smooth'
+                    });
+                }
+            }, 100); // Small delay to ensure confirmation is rendered
+        }
+
+        // Confirm the appointment
+        function confirmAppointment() {
+            if (!selectedSlot) return;
+
+            // Here you would typically make an API call to book the appointment
+            // For now, we'll just show a success message
+            
+            const confirmation = document.getElementById('confirmation');
+            confirmation.innerHTML = `
+                <h4 style="color: #267a87;">Appointment Confirmed!</h4>
+                <p style="color: #319eaf;">Your appointment has been successfully scheduled for ${formatDate(selectedSlot.start)} from ${formatTime(selectedSlot.start)} to ${formatTime(selectedSlot.end)}.</p>
+                <p style="color: #319eaf; font-size: 14px;">You will receive a confirmation email shortly.</p>
+            `;
+
+            // Reset after 3 seconds
+            setTimeout(() => {
+                resetSelection();
+            }, 3000);
+        }
+
+        // Cancel selection
+        function cancelSelection() {
+            resetSelection();
+        }
+
+        // Reset selection
+        function resetSelection() {
+            selectedSlot = null;
+            selectedDate = null;
+            
+            // Remove selection from slots
+            document.querySelectorAll('.time-slot.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // Hide confirmation and time slots
+            const confirmation = document.getElementById('confirmation');
+            const timeSlotsSection = document.querySelector('.time-slots');
+            const calendarSection = document.querySelector('.calendar-section');
+            
+            confirmation.classList.remove('show');
+            timeSlotsSection.classList.remove('show');
+            calendarSection.classList.remove('has-slots');
+            
+            // Re-render calendar to remove date selection
+            renderCalendar();
+        }
+
+        // Setup timezone change handler
+        function setupTimezoneHandler() {
+            const timezoneSelect = document.getElementById('timezoneSelect');
+            timezoneSelect.addEventListener('change', function() {
+                // Refresh calendar to update "today" indicator
+                renderCalendar();
+                
+                // Refresh time slots if a date is selected
+                if (selectedDate) {
+                    loadSlotsForDate(selectedDate);
+                }
+            });
+        }
+
+        // Update timezone options with current times
+        function updateTimezoneOptions() {
+            const timezoneSelect = document.getElementById('timezoneSelect');
+            if (!timezoneSelect || !timezoneSelect.options) return;
+            const options = timezoneSelect.options;
+            
+            const timezones = {
+                'Hawaiʻi Time – US & Canada': 'Pacific/Honolulu',
+                'Pacific Time – US & Canada': 'America/Los_Angeles',
+                'Mountain Time – US & Canada': 'America/Denver', 
+                'Central Time – US & Canada': 'America/Chicago',
+                'Eastern Time – US & Canada': 'America/New_York',
+                'Alaska Time – US & Canada': 'America/Anchorage',
+                'Atlantic Time – Canada': 'America/Halifax',
+                'Newfoundland Time – Canada': 'America/St_Johns'
+            };
+            
+            for (let i = 1; i < options.length; i++) { // Skip first "Please Select" option
+                const option = options[i];
+                const baseText = option.value;
+                
+                if (timezones[baseText]) {
+                    try {
+                        const now = new Date();
+                        const timeInZone = now.toLocaleTimeString('en-US', {
+                            timeZone: timezones[baseText],
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                        });
+                        
+                        option.textContent = `${baseText} (${timeInZone})`;
+                    } catch (e) {
+                        // Fallback if timezone is not supported
+                        option.textContent = baseText;
+                    }
+                }
+            }
+        }
+
+        // Show skeleton loading state
+        function showSkeletonLoading() {
+            const skeleton = document.getElementById('skeletonCalendar');
+            const realCalendar = document.getElementById('realCalendar');
+            
+            skeleton.classList.add('show');
+            realCalendar.style.display = 'none';
+        }
+
+        // Hide skeleton loading state
+        function hideSkeletonLoading() {
+            const skeleton = document.getElementById('skeletonCalendar');
+            const realCalendar = document.getElementById('realCalendar');
+            
+            skeleton.classList.remove('show');
+            realCalendar.style.display = 'block';
+        }
+
+        // Check if user is online
+        function isOnline() {
+            return navigator.onLine;
+        }
+
+        // Show offline message
+        function showOfflineMessage() {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.className = 'error-message offline';
+            errorMessage.innerHTML = `
+                You appear to be offline. Please check your internet connection and try again.
+                <br><button class="retry-button" onclick="retryConnection()">Try Again</button>
+                <div class="retry-progress" id="retryProgress" style="display: none;"></div>
+            `;
+            errorMessage.style.display = 'block';
+        }
+
+        // Show network error message
+        function showNetworkError() {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.className = 'error-message';
+            errorMessage.innerHTML = `
+                Unable to load appointment slots after automatic retries. Please check your connection and try again.
+                <br><button class="retry-button" onclick="retryConnection()">Try Again</button>
+                <div class="retry-progress" id="retryProgress" style="display: none;"></div>
+            `;
+            errorMessage.style.display = 'block';
+        }
+
+        // Retry connection function with progress indication
+        async function retryConnection() {
+            const retryButton = document.querySelector('.retry-button');
+            if (retryButton) {
+                retryButton.disabled = true;
+                retryButton.textContent = 'Retrying...';
+                retryButton.classList.remove('success');
+            }
+            
+            showSkeletonLoading();
+            hideErrorMessage();
+            
+            try {
+                // Enable retry progress display for manual retries
+                await fetchAppointmentData(true);
+                hideSkeletonLoading();
+                
+                if (retryButton) {
+                    retryButton.textContent = 'Success!';
+                    retryButton.classList.add('success');
+                    setTimeout(() => {
+                        if (retryButton) {
+                            retryButton.disabled = false;
+                            retryButton.textContent = 'Try Again';
+                            retryButton.classList.remove('success');
+                        }
+                    }, 1000);
+                }
+            } catch (error) {
+                hideSkeletonLoading();
+                
+                if (retryButton) {
+                    retryButton.disabled = false;
+                    retryButton.textContent = 'Try Again';
+                    retryButton.classList.remove('success');
+                }
+            }
+        }
+
+        // Hide error message
+        function hideErrorMessage() {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.style.display = 'none';
+        }
+
+        // Utility function to delay execution
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Show retry progress to user
+        function showRetryProgress(attempt, maxRetries, delayMs) {
+            const progressElement = document.getElementById('retryProgress');
+            if (progressElement) {
+                progressElement.style.display = 'block';
+                progressElement.textContent = `Automatic retry ${attempt}/${maxRetries} in ${Math.ceil(delayMs/1000)} seconds...`;
+            }
+        }
+
+        // Hide retry progress
+        function hideRetryProgress() {
+            const progressElement = document.getElementById('retryProgress');
+            if (progressElement) {
+                progressElement.style.display = 'none';
+            }
+        }
+
+        // Retry with exponential backoff
+        async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 1000, showProgress = false) {
+            let lastError;
+            
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    return await fn();
+                } catch (error) {
+                    lastError = error;
+                    
+                    // Don't retry on the last attempt
+                    if (attempt === maxRetries) {
+                        if (showProgress) hideRetryProgress();
+                        throw error;
+                    }
+                    
+                    // Skip retry for certain errors
+                    if (error.name === 'AbortError' || !isOnline()) {
+                        if (showProgress) hideRetryProgress();
+                        throw error;
+                    }
+                    
+                    // Calculate exponential backoff delay: 1s, 2s, 4s
+                    const delayMs = baseDelay * Math.pow(2, attempt);
+                    console.log(`API call failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delayMs}ms...`);
+                    
+                    if (showProgress) {
+                        showRetryProgress(attempt + 1, maxRetries, delayMs);
+                    }
+                    
+                    await delay(delayMs);
+                }
+            }
+            
+            throw lastError;
+        }
+
+        // Single API call function
+        async function makeApiCall() {
+            // Check if user is online first
+            if (!isOnline()) {
+                throw new Error('OFFLINE');
+            }
+
+            const response = await fetch('https://appointment-service-40113428780.us-west1.run.app/get-slots', {
+                signal: AbortSignal.timeout(10000) // 10 second timeout
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            return await response.json();
+        }
+
+        // Fetch appointment data from API with retry logic
+        async function fetchAppointmentData(showRetryProgress = false) {
+            try {
+                const data = await retryWithBackoff(makeApiCall, 3, 1000, showRetryProgress);
+                
+                // Filter for the specific facility, provider, and resource
+                const filteredSlots = data.available_slots.filter(slot => 
+                    slot.facility_id === 10277771 && 
+                    slot.provider_id === 10193404 && 
+                    slot.resource_id === 10191884
+                );
+                
+                // Update appointment data
+                appointmentData.length = 0; // Clear existing data
+                appointmentData.push(...filteredSlots); // Add filtered data
+                
+                // Hide any previous error messages and retry progress
+                hideErrorMessage();
+                hideRetryProgress();
+                
+                // Re-render calendar with new data
+                renderCalendar();
+                
+                // Refresh time slots if a date is selected
+                if (selectedDate) {
+                    loadSlotsForDate(selectedDate);
+                }
+                
+                return filteredSlots;
+            } catch (error) {
+                console.error('Error fetching appointment data after retries:', error);
+                
+                // Hide retry progress
+                hideRetryProgress();
+                
+                // Show appropriate error message based on error type
+                if (error.message === 'OFFLINE' || !isOnline()) {
+                    showOfflineMessage();
+                } else if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+                    showNetworkError();
+                } else {
+                    showNetworkError();
+                }
+                
+                return [];
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Show skeleton loading
+            showSkeletonLoading();
+            
+            // Fetch appointment data first
+            await fetchAppointmentData();
+            
+            // Hide skeleton and show real calendar
+            hideSkeletonLoading();
+            
+            initializeCalendar();
+            setupTimezoneHandler();
+            updateTimezoneOptions();
+            
+            // Update times every minute
+            setInterval(updateTimezoneOptions, 60000);
+            
+            // Refresh appointment data every 5 minutes
+            setInterval(fetchAppointmentData, 300000);
+            
+            // Add online/offline event listeners
+            window.addEventListener('online', handleOnline);
+            window.addEventListener('offline', handleOffline);
+        });
+
+        // Handle coming back online
+        function handleOnline() {
+            console.log('Connection restored');
+            hideErrorMessage();
+            // Automatically try to fetch data when back online
+            fetchAppointmentData().then(() => {
+                hideSkeletonLoading();
+            });
+        }
+
+        // Handle going offline
+        function handleOffline() {
+            console.log('Connection lost');
+            showOfflineMessage();
+        }
+
+        // Expose functions for external configuration
+        window.AppointmentPicker = {
+            // Function to manually refresh appointment data
+            refreshAppointmentData: async function() {
+                return await fetchAppointmentData();
+            },
+            
+            // Function to update appointment data (for manual override if needed)
+            updateAppointmentData: function(newData) {
+                if (Array.isArray(newData)) {
+                    appointmentData.length = 0; // Clear existing data
+                    appointmentData.push(...newData); // Add new data
+                    
+                    // Re-render calendar
+                    renderCalendar();
+                    
+                    // Reload slots for current date
+                    if (selectedDate) {
+                        loadSlotsForDate(selectedDate);
+                    }
+                }
+            },
+            
+            // Function to get selected appointment
+            getSelectedAppointment: function() {
+                return selectedSlot;
+            },
+            
+            // Function to reset the picker
+            reset: function() {
+                resetSelection();
+                initializeCalendar();
+            }
+        };
+    </script>
+</body>
+</html>

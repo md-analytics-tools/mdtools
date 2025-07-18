@@ -1,0 +1,95 @@
+<!-- Appointment to Jotform widget (full embed) -->
+<div id="appt-widget">
+  <!-- Scoped styles -->
+  <style>
+    #appt-widget .form-stack{
+      max-width:420px;
+      width:100%;
+      margin-inline:auto;
+    }
+    #appt-widget .form-stack>*{
+      width:100%;
+      display:block;
+      border:0;
+    }
+    #appt-widget .form-stack>*+*{
+      margin-top:1.5rem;
+    }
+  </style>
+
+  <!-- Appointment picker + contact form -->
+  <div class="form-stack">
+    <iframe
+      id="apptPicker"
+      src="https://md-analytics-tools.github.io/mdtools/form-appt-picker-no-script2.html"
+      scrolling="no"
+      title="Appointment picker"></iframe>
+
+    <iframe
+      id="contactForm"
+      style="display:none"
+      title="Contact form"></iframe>
+  </div>
+
+  <!-- Logic -->
+<script>
+  /* Convert ISO start time to local user‑friendly label */
+  const formatSlot = iso =>
+    new Date(iso).toLocaleString(
+      "en-US",
+      { timeZone:"America/Los_Angeles", dateStyle:"medium", timeStyle:"short" }
+    );
+
+  window.addEventListener("message", e => {
+    /* 1. Height update from the picker page */
+    if (e.data && e.data.type === "pickerHeight") {
+      const picker = document.getElementById("apptPicker");
+      if (picker) { picker.style.height = e.data.value + "px"; }
+      return;
+    }
+
+    /* 2. Height update from the Jotform script inside contactForm */
+    if (typeof e.data === "string" && e.data.indexOf("setHeight") === 0) {
+      const parts  = e.data.split(":");
+      const height = parseInt(parts[1]||"", 10);
+      if (!isNaN(height)) {
+        document.getElementById("contactForm")
+          .style.height = height + "px";
+      }
+      return;
+    }
+
+    /* 3. Slot chosen in the picker */
+    if (e.data && e.data.type === "appointmentSelected" && e.data.data?.start) {
+      const slot      = e.data.data;
+      const label     = formatSlot(slot.start);
+      const picker    = document.getElementById("apptPicker");
+      const formFrame = document.getElementById("contactForm");
+
+      formFrame.src            = "https://md-analytics-tools.github.io/mdtools/form-contact-with-script.html";
+      formFrame.style.display  = "block";
+      picker.style.display     = "none";
+
+      formFrame.onload = () => {
+        formFrame.contentWindow.postMessage(
+          { type:"appointmentSelected", data:{ label, start:slot.start } },
+          "*"
+        );
+      };
+      return;
+    }
+
+    /* 4. Scroll request from the picker iframe */
+    if (e.data?.type === "pickerScroll" && typeof e.data.offset === "number") {
+      const NAVBAR_HEIGHT = 120;    
+      const picker   = document.getElementById("apptPicker");
+      const rect     = picker.getBoundingClientRect();
+      const targetY  = window.scrollY + rect.top + e.data.offset - NAVBAR_HEIGHT;
+      window.scrollTo({ top: targetY, behavior: "smooth" });
+      return;
+    }
+
+  }, false);
+</script>
+
+</div>
