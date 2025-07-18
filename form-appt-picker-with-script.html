@@ -1702,20 +1702,16 @@
     </script>
 
 <script>
-/* ----- auto‑inserted 20 20 503 12 61 79 80 81 98 708 333 703 706 33 100 204 250 395 398 399 400 709 705 710 701date -u +%Y-%m-%dT%H:%M:%SZ) ----- */
+/* ----- auto‑inserted 2025-07-18T06:26:21Z ----- */
 (function () {
   /* Preserve any existing confirmAppointment() */
-  const originalConfirm = window.confirmAppointment || function() {};
+  const originalConfirm = window.confirmAppointment || function () {};
 
   window.confirmAppointment = function () {
     try {
-      // Grab the chosen slot from AppointmentPicker
       const slot = window.AppointmentPicker?.getSelectedAppointment?.();
       if (slot) {
-        /* 👉 NEW: log it so you see exactly what we’re posting */
         console.log("appointmentSelected →", slot);
-
-        // Ship it to the embedding window
         window.parent.postMessage(
           { type: "appointmentSelected", data: slot },
           "*"
@@ -1724,29 +1720,22 @@
     } catch (err) {
       console.error("postMessage for appointment failed:", err);
     }
-
-    /* fall through to whatever confirmAppointment already did */
     return originalConfirm.apply(this, arguments);
   };
 
-  function sendHeight() {
+  function sendHeight () {
     const h = Math.max(
       document.documentElement.scrollHeight,
       document.body.scrollHeight
     );
-    window.parent.postMessage({ type: 'pickerHeight', value: h }, '*');
+    window.parent.postMessage({ type: "pickerHeight", value: h }, "*");
   }
 
   /* Fire once after first paint … */
-  window.addEventListener('load', sendHeight, { once: true });
+  window.addEventListener("load", sendHeight, { once: true });
 
   /* …and again whenever the layout changes */
   new ResizeObserver(sendHeight).observe(document.body);
-
-
-
-
-
 })();
 </script>
 </body>
