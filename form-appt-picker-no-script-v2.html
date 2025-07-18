@@ -1367,9 +1367,13 @@
                 slotInfo: slotInfo
             };
             
+            const appointmentJsonString = JSON.stringify(appointmentJson);
+            console.log("📋 Appointment JSON created:", appointmentJson);
+            console.log("🔗 Stringified appointment JSON:", appointmentJsonString);
+            
             const message = {
                 type: "continueToForm",
-                appointment: JSON.stringify(appointmentJson),
+                appointment: appointmentJsonString,
                 scrollNeeded: scrollNeeded
             };
             console.log("✅ Sending continueToForm message:", message);
