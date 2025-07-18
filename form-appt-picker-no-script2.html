@@ -1110,30 +1110,39 @@
         }
 
         // Select a date
-        function selectDate(dateStr) {
-            selectedDate = dateStr;
-            renderCalendar();
-            loadSlotsForDate(dateStr);
-            
-            // Show the time slots section and update calendar layout
-            const timeSlotsSection = document.querySelector('.time-slots');
-            const calendarSection = document.querySelector('.calendar-section');
-            timeSlotsSection.classList.add('show');
-            calendarSection.classList.add('has-slots');
-            
-            // On mobile, scroll to bring time slots to top of screen
-            setTimeout(() => {
-                if (window.innerWidth <= 768) { // Mobile breakpoint
-                    const timeSlotsRect = timeSlotsSection.getBoundingClientRect();
-                    const targetPosition = window.scrollY + timeSlotsRect.top - 20; // 20px padding from top
-                    
-                    window.scrollTo({
-                        top: Math.max(0, targetPosition),
-                        behavior: 'smooth'
-                    });
-                }
-            }, 400); // Wait for time slots animation to complete
+function selectDate(dateStr) {
+    selectedDate = dateStr;
+    renderCalendar();
+    loadSlotsForDate(dateStr);
+    
+    // Show the time slots section and update calendar layout
+    const timeSlotsSection = document.querySelector('.time-slots');
+    const calendarSection = document.querySelector('.calendar-section');
+    timeSlotsSection.classList.add('show');
+    calendarSection.classList.add('has-slots');
+    
+    // On mobile, ask parent to scroll to bring time slots into view
+    setTimeout(() => {
+        if (window.innerWidth <= 768) { // Mobile breakpoint
+            const timeSlotsRect = timeSlotsSection.getBoundingClientRect();
+            const offset = timeSlotsRect.top - 20; // 20px padding from top
+
+            if (window.parent !== window) {
+                // ← replace your window.scrollTo here
+                window.parent.postMessage(
+                    { type: 'pickerScroll', offset },
+                    '*'  // ideally lock this down to your parent’s exact origin
+                );
+            } else {
+                // fallback for standalone testing
+                window.scrollTo({
+                    top: window.scrollY + offset,
+                    behavior: 'smooth'
+                });
+            }
         }
+    }, 400); // Wait for time‑slots animation to complete
+}
 
         // Timezone offset mappings
         const timezoneOffsets = {
@@ -1287,35 +1296,46 @@
         }
 
         // Show confirmation dialog
-        function showConfirmation(slot) {
-            const confirmation = document.getElementById('confirmation');
-            const confirmationText = document.getElementById('confirmationText');
+function showConfirmation(slot) {
+    const confirmation      = document.getElementById('confirmation');
+    const confirmationText  = document.getElementById('confirmationText');
+    
+    const startTime = formatTime(slot.start);
+    const endTime   = formatTime(slot.end);
+    const date      = formatDate(slot.start);
+    
+    confirmationText.textContent = `${date} from ${startTime} to ${endTime}`;
+    confirmation.classList.add('show');
+    
+    // Scroll to center the confirmation in mobile view
+    setTimeout(() => {
+        if (window.innerWidth <= 768) { // Mobile breakpoint
+            const confirmationRect   = confirmation.getBoundingClientRect();
+            const viewportHeight     = window.innerHeight;
+            const confirmationHeight = confirmationRect.height;
             
-            const startTime = formatTime(slot.start);
-            const endTime = formatTime(slot.end);
-            const date = formatDate(slot.start);
-            
-            confirmationText.textContent = `${date} from ${startTime} to ${endTime}`;
-            
-            confirmation.classList.add('show');
-            
-            // Scroll to center the confirmation in mobile view
-            setTimeout(() => {
-                if (window.innerWidth <= 768) { // Mobile breakpoint
-                    const confirmationRect = confirmation.getBoundingClientRect();
-                    const viewportHeight = window.innerHeight;
-                    const confirmationHeight = confirmationRect.height;
-                    
-                    // Calculate position to center the confirmation vertically
-                    const targetPosition = window.scrollY + confirmationRect.top - (viewportHeight / 2) + (confirmationHeight / 2);
-                    
-                    window.scrollTo({
-                        top: Math.max(0, targetPosition),
-                        behavior: 'smooth'
-                    });
-                }
-            }, 100); // Small delay to ensure confirmation is rendered
+            // how far down inside the iframe we want to land
+            const offset = confirmationRect.top 
+                         - (viewportHeight / 2) 
+                         + (confirmationHeight / 2);
+
+            // ←—— REPLACE your window.scrollTo here:
+            if (window.parent !== window) {
+                window.parent.postMessage(
+                    { type: 'pickerScroll', offset },
+                    '*'  // lock down to your parent origin in production
+                );
+            } else {
+                // fallback for standalone testing
+                window.scrollTo({
+                    top: window.scrollY + offset,
+                    behavior: 'smooth'
+                });
+            }
         }
+    }, 100); // delay to ensure confirmation is rendered
+}
+
 
         // Confirm the appointment
         function confirmAppointment() {
