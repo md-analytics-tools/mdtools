@@ -1750,7 +1750,38 @@
   };
 
 
+
+
+
   
+
+    /* 1. intercept scrollIntoView (used by calendar when date → times etc.) */
+  const origSI = Element.prototype.scrollIntoView;
+  Element.prototype.scrollIntoView = function (opts) {
+    try {
+      const top = this.getBoundingClientRect().top + window.pageYOffset;
+      window.parent.postMessage({ type: "pickerScrollTo", top }, "*");
+    } catch (_) { /* swallow */ }
+    origSI.call(this, opts);
+  };
+
+  /* 2. intercept window.scrollTo( { top:<y> } ) */
+  const origST = window.scrollTo;
+  window.scrollTo = function (x, y) {
+    let top = 0;
+    if (typeof x === "object" && x !== null) {
+      top = x.top ?? 0;
+    } else if (typeof y === "number") {
+      top = y;
+    }
+    try {
+      window.parent.postMessage({ type: "pickerScrollTo", top }, "*");
+    } catch (_) { /* swallow */ }
+    return origST.apply(window, arguments);
+  };
+
+
+
 })();
 </script>
 </body>

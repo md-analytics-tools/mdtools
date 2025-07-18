@@ -62,7 +62,18 @@ perl -0777 -pe '
 
   /* …and again whenever the layout changes */
   new ResizeObserver(sendHeight).observe(document.body);
-})();
+
+  const orig = Element.prototype.scrollIntoView;
+  Element.prototype.scrollIntoView = function (options = { behavior:"smooth", block:"start" }) {
+    try {
+      /* element’s top inside the iframe */
+      const t = this.getBoundingClientRect().top;
+      window.parent.postMessage({ type:"pickerScrollTo", top:t }, "*");
+    } catch (err) { /* fail silently */ }
+
+    /* Still call the original so the iframe itself stays usable */
+    orig.call(this, options);
+  };
 </script>
 </body>}gis;
 ' "$DST_HTML" > "$TMP_FILE" && mv "$TMP_FILE" "$DST_HTML"
