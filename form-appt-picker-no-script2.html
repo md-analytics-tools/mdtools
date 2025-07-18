@@ -1311,31 +1311,34 @@ function showConfirmation(slot) {
     
     // Scroll to center the confirmation in mobile view
     setTimeout(() => {
-        if (window.innerWidth <= 768) { // Mobile breakpoint
-            const confirmationRect   = confirmation.getBoundingClientRect();
-            const viewportHeight     = window.innerHeight;
-            const confirmationHeight = confirmationRect.height;
-            
-            // how far down inside the iframe we want to land
-            const offset = confirmationRect.top 
-                         - (viewportHeight / 2) 
-                         + (confirmationHeight / 2);
+    if (window.innerWidth <= 768) {           // mobile breakpoint
+      const NAVBAR_HEIGHT   = 120;            // same value parent subtracts
+      const rect            = confirmation.getBoundingClientRect();
+      const viewportHeight  = window.innerHeight;
 
-            // ←—— REPLACE your window.scrollTo here:
-            if (window.parent !== window) {
-                window.parent.postMessage(
-                    { type: 'pickerScroll', offset },
-                    '*'  // lock down to your parent origin in production
-                );
-            } else {
-                // fallback for standalone testing
-                window.scrollTo({
-                    top: window.scrollY + offset,
-                    behavior: 'smooth'
-                });
-            }
-        }
-    }, 100); // delay to ensure confirmation is rendered
+      // Offset needed to center the card inside the iframe viewport
+      const offsetInside = rect.top
+                          - (viewportHeight / 2)
+                          + (rect.height / 2);
+
+      /* Parent always subtracts NAVBAR_HEIGHT, so we add it here */
+      const offset = offsetInside + NAVBAR_HEIGHT;
+
+      if (window.parent !== window) {
+        // Embedded → ask parent to scroll
+        window.parent.postMessage(
+          { type: "pickerScroll", offset },
+          "*"                                 // TODO: lock to exact origin
+        );
+      } else {
+        // Stand‑alone testing → scroll locally (no navbar to account for)
+        window.scrollTo({
+          top: window.scrollY + offsetInside,
+          behavior: "smooth"
+        });
+      }
+    }
+  }, 100);                                   // let the panel render first
 }
 
 
