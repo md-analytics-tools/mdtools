@@ -1,0 +1,119 @@
+
+<!-- Appointment‑to‑Jotform widget (full embed, nav‑aware) -->
+<div id="appt-widget">
+  <!-- Scoped styles -->
+  <style>
+    #appt-widget .form-stack{
+      max-width:420px;
+      width:100%;
+      margin-inline:auto;
+    }
+    #appt-widget .form-stack > *{
+      width:100%;
+      display:block;
+      border:0;
+    }
+    #appt-widget .form-stack > * + *{ margin-top:1.5rem; }
+
+    /* Let CSS hold the current navbar offset (updated by JS) */
+    :root{ --nav-offset:72px; }                     /* fallback */
+  </style>
+
+  <!-- Frames -->
+  <div class="form-stack">
+    <iframe
+      id="apptPicker"
+      src="https://md-analytics-tools.github.io/mdtools/form-appt-picker-with-script.html"
+      scrolling="no"
+      title="Appointment picker"></iframe>
+
+    <iframe
+      id="contactForm"
+      style="display:none"
+      title="Contact form"></iframe>
+  </div>
+
+  <!-- Behaviour -->
+  <script>
+    /* 0️⃣  Detect navbar height once and store it */
+    const nav          = document.querySelector(".navbar_component");
+    const NAV_OFFSET   = (nav ? nav.getBoundingClientRect().height : 72) + 8; /* +8 px padding */
+    document.documentElement.style.setProperty("--nav-offset", NAV_OFFSET + "px");
+
+    /* Helper: ISO → readable */
+    const fmt = iso => new Date(iso).toLocaleString(
+      "en-US",
+      { timeZone:"America/Los_Angeles", dateStyle:"medium", timeStyle:"short" }
+    );
+
+    /* Helper: scroll so BOTTOM of widget is visible, but keep navbar clear */
+    const scrollWidgetBottom = () => {
+      const w = document.getElementById("appt-widget");
+      if (!w) { return; }
+      const rect   = w.getBoundingClientRect();
+      const target = rect.bottom + window.pageYOffset - window.innerHeight + NAV_OFFSET;
+      window.scrollTo({ top: target, behavior:"smooth" });
+    };
+
+    /* Helper: scroll widget’s TOP just below navbar */
+    const scrollWidgetTop = () => {
+      const w = document.getElementById("appt-widget");
+      if (!w) { return; }
+      const rect   = w.getBoundingClientRect();
+      const target = rect.top + window.pageYOffset - NAV_OFFSET;
+      window.scrollTo({ top: target, behavior:"smooth" });
+    };
+
+    /* Track last picker height so we only auto‑scroll when it grows */
+    let prevPickerHeight = 0;
+
+    window.addEventListener("message", e => {
+      if (!e.data) { return; }
+
+      /* 1️⃣  Height from appointment picker */
+      if (e.data.type === "pickerHeight") {
+        const picker = document.getElementById("apptPicker");
+        if (picker) { picker.style.height = e.data.value + "px"; }
+
+        if (e.data.value > prevPickerHeight && prevPickerHeight !== 0) {
+          scrollWidgetBottom();                 /* keep time grid visible */
+        }
+        prevPickerHeight = e.data.value;
+        return;
+      }
+
+      /* 2️⃣  Height from Jotform iframe (setHeight:<num>) */
+      if (typeof e.data === "string" && e.data.startsWith("setHeight:")) {
+        const h = parseInt(e.data.split(":")[1] || "0", 10);
+        if (!isNaN(h)) {
+          const cf = document.getElementById("contactForm");
+          if (cf) { cf.style.height = h + "px"; }
+        }
+        return;
+      }
+
+      /* 3️⃣  Slot chosen in picker */
+      if (e.data.type === "appointmentSelected" &&
+          e.data.data && e.data.data.start) {
+
+        const slot  = e.data.data;
+        const label = fmt(slot.start);
+
+        const picker = document.getElementById("apptPicker");
+        const cf     = document.getElementById("contactForm");
+
+        cf.src           = "https://md-analytics-tools.github.io/mdtools/form-contact-with-script.html";
+        cf.style.display = "block";
+        picker.style.display = "none";
+
+        cf.onload = () => {
+          cf.contentWindow.postMessage(
+            { type:"appointmentSelected", data:{ label:label, start:slot.start } },
+            "*"
+          );
+          scrollWidgetTop();                    /* show form top below nav */
+        };
+      }
+    }, false);
+  </script>
+</div>
