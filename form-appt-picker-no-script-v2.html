@@ -282,6 +282,13 @@
             max-width: 320px;
         }
 
+        @media (max-width: 768px) {
+            .calendar-section.has-slots ~ .timezone-section .form-dropdown {
+                width: 100%;
+                max-width: 100%;
+            }
+        }
+
         .calendar-section.has-slots + .timezone-section {
             margin-top: 15px;
         }
