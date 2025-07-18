@@ -1728,6 +1728,25 @@
     /* fall through to whatever confirmAppointment already did */
     return originalConfirm.apply(this, arguments);
   };
+
+ function sendHeight () {
+    const h = Math.max(
+      document.documentElement.scrollHeight,
+      document.body.scrollHeight
+    );
+    window.parent.postMessage({ type: pickerHeight, value: h }, *);
+  }
+
+  /* Fire once after first paint … */
+  window.addEventListener(load, sendHeight, { once: true });
+
+  /* …and again whenever the layout changes */
+  new ResizeObserver(sendHeight).observe(document.body);
+
+
+
+
+
 })();
 </script>
 </body>
