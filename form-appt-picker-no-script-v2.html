@@ -1343,12 +1343,29 @@
             const confirmationElement = document.getElementById('confirmation');
             const confirmationRect = confirmationElement.getBoundingClientRect();
             const scrollNeeded = Math.max(0, confirmationRect.top - 20);
+            
+            // Create ISO timestamp strings
+            const startTime = new Date(selectedSlot.start).toISOString();
+            const endTime = new Date(selectedSlot.end).toISOString();
+            
+            // Calculate duration in minutes
+            const durationMs = new Date(selectedSlot.end) - new Date(selectedSlot.start);
+            const duration = Math.round(durationMs / (1000 * 60)); // Convert to minutes
+            
+            // Create slot object with required IDs
+            const slot = {
+                facility_id: 10277771,
+                provider_id: 10193404,
+                resource_id: 10191884
+            };
+            
             const message = {
                 type: "continueToForm",
                 appointment: {
-                    date: formatDate(selectedSlot.start),
-                    time: formatTime(selectedSlot.start),
-                    endTime: formatTime(selectedSlot.end)
+                    startTime: startTime,
+                    endTime: endTime,
+                    duration: duration,
+                    slot: slot
                 },
                 scrollNeeded: scrollNeeded
             };
