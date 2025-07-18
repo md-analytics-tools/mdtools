@@ -1733,5 +1733,22 @@ function showConfirmation(slot) {
             }
         };
     </script>
+
+    <script>
+/* --- send my height to the parent --- */
+function postHeight() {
+  if (window.parent !== window) {
+    const h = document.documentElement.scrollHeight;
+    window.parent.postMessage({ type: "pickerHeight", value: h }, "*");  // ⚠️ lock origin in prod
+  }
+}
+
+/* send once after DOM ready … */
+document.addEventListener("DOMContentLoaded", postHeight);
+
+/* …and every time something inside grows/shrinks */
+new ResizeObserver(postHeight).observe(document.documentElement);
+</script>
+
 </body>
 </html>
