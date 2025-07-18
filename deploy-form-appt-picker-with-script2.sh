@@ -9,6 +9,11 @@ set -euo pipefail
 #   If you authenticate over HTTPS with a PAT, keep the remote exactly as you
 #   set it earlier:
 #     git remote set-url origin "https://<PAT>@github.com/md-analytics-tools/mdtools.git"
+#
+# NOTE:
+#   All JS strings now use double quotes ("pickerHeight", "load", "*") so the
+#   outer shell‑level single quotes don’t clash—Perl no longer sees any embedded
+#   ' to eat, and the quotes survive intact in the HTML output.
 ###############################################################################
 
 # 1️⃣  Source and destination filenames
@@ -18,27 +23,21 @@ DST_HTML="form-appt-picker-with-script.html"        # final output lives here
 # 2️⃣  Copy the raw file to the destination
 cp "$SRC_HTML" "$DST_HTML"
 
-# 3️⃣  Inject a tiny helper that piggy‑backs on confirmAppointment()
-#     • Grabs the slot via AppointmentPicker.getSelectedAppointment()
-#     • postMessage’s it to whatever page is embedding the picker
+# 3️⃣  Inject helper + auto‑height + postMessage
 TMP_FILE="$(mktemp)"
 perl -0777 -pe '
   s{</body>}{
 <script>
-/* ----- auto‑inserted $(date -u +%Y-%m-%dT%H:%M:%SZ) ----- */
+/* ----- auto‑inserted '"$(date -u +%Y-%m-%dT%H:%M:%SZ)"' ----- */
 (function () {
   /* Preserve any existing confirmAppointment() */
-  const originalConfirm = window.confirmAppointment || function() {};
+  const originalConfirm = window.confirmAppointment || function () {};
 
   window.confirmAppointment = function () {
     try {
-      // Grab the chosen slot from AppointmentPicker
       const slot = window.AppointmentPicker?.getSelectedAppointment?.();
       if (slot) {
-        /* 👉 NEW: log it so you see exactly what we’re posting */
         console.log("appointmentSelected →", slot);
-
-        // Ship it to the embedding window
         window.parent.postMessage(
           { type: "appointmentSelected", data: slot },
           "*"
@@ -47,29 +46,22 @@ perl -0777 -pe '
     } catch (err) {
       console.error("postMessage for appointment failed:", err);
     }
-
-    /* fall through to whatever confirmAppointment already did */
     return originalConfirm.apply(this, arguments);
   };
 
- function sendHeight () {
+  function sendHeight () {
     const h = Math.max(
       document.documentElement.scrollHeight,
       document.body.scrollHeight
     );
-    window.parent.postMessage({ type: 'pickerHeight', value: h }, '*');
+    window.parent.postMessage({ type: "pickerHeight", value: h }, "*");
   }
 
   /* Fire once after first paint … */
-  window.addEventListener('load', sendHeight, { once: true });
+  window.addEventListener("load", sendHeight, { once: true });
 
   /* …and again whenever the layout changes */
   new ResizeObserver(sendHeight).observe(document.body);
-
-
-
-
-
 })();
 </script>
 </body>}gis;
