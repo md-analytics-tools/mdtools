@@ -1477,8 +1477,20 @@
                 window.parent.postMessage(message, "*");
             }
 
-            // Appointment data is sent to parent window - no confirmation dialog needed
-            // Parent window will handle navigation to JotForm directly
+            // Here you would typically make an API call to book the appointment
+            // For now, we'll just show a success message
+            
+            const confirmation = document.getElementById('confirmation');
+            confirmation.innerHTML = `
+                <h4 style="color: #267a87;">Appointment Confirmed!</h4>
+                <p style="color: #319eaf;">Your appointment has been successfully scheduled for ${formatDate(selectedSlot.start)} from ${formatTime(selectedSlot.start)} to ${formatTime(selectedSlot.end)}.</p>
+                <p style="color: #319eaf; font-size: 14px;">You will receive a confirmation email shortly.</p>
+            `;
+
+            // Reset after 3 seconds
+            setTimeout(() => {
+                resetSelection();
+            }, 3000);
         }
 
         // Cancel selection
