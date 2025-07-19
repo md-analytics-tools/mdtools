@@ -2352,7 +2352,15 @@ function testSubmitFunction() {
   document.getElementById('input_101')?.value ??
   window.selectedAppointment ?? '';
 
-  
+
+  if (typeof appointmentDateTime === 'string' && appointmentDateTime.trim().startsWith('{')) {
+  // safely convert the JSON text to a real object
+  try { appointmentObj = JSON.parse(appointmentDateTime); } catch (e) {
+    console.warn('Bad JSON in #input_101:', e);
+  }
+}
+
+
   console.log('🗓️ appointment_date_time:', appointmentDateTime);
 
   const data = {
