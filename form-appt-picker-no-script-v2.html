@@ -164,22 +164,57 @@
             margin: 0;
         }
 
-        .calendar-grid {
+        /* Horizontal scrolling calendar container */
+        .calendar-scroll-container {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            /* Add subtle padding to show edges of adjacent months */
+            padding: 0 15px;
+            margin: 0 -15px;
+            box-sizing: content-box;
+        }
+
+        .calendar-months-strip {
+            display: flex;
+            width: 300%; /* 3 months side by side */
+            transform: translateX(-33.33%); /* Center the current month */
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+        }
+
+        .calendar-months-strip.no-transition {
+            transition: none;
+        }
+
+        .month-view {
+            width: 33.33%;
+            flex-shrink: 0;
+            padding: 0 5px; /* Small gap between months */
+            box-sizing: border-box;
+        }
+
+        .month-view .calendar-grid {
             padding: 0;
+            background: #ffffff;
+            border-radius: 8px;
             overflow: hidden;
             position: relative;
         }
 
+        /* Make non-current months slightly faded */
+        .month-view:not(.current-month) {
+            opacity: 0.3;
+            transform: scale(0.95);
+        }
+
+        .month-view.current-month {
+            opacity: 1;
+            transform: scale(1);
+        }
+
         .days-grid {
-            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .days-grid.slide-left {
-            transform: translateX(-100%);
-        }
-
-        .days-grid.slide-right {
-            transform: translateX(100%);
+            transition: none;
         }
 
         .days-grid.slide-left {
@@ -914,17 +949,57 @@
                         <h4 class="calendar-title" id="monthTitle"></h4>
                         <button class="calendar-nav" id="nextMonth">›</button>
                     </div>
-                    <div class="calendar-grid">
-                        <div class="weekdays">
-                            <div class="weekday">Sun</div>
-                            <div class="weekday">Mon</div>
-                            <div class="weekday">Tue</div>
-                            <div class="weekday">Wed</div>
-                            <div class="weekday">Thu</div>
-                            <div class="weekday">Fri</div>
-                            <div class="weekday">Sat</div>
+                    
+                    <div class="calendar-scroll-container">
+                        <div class="calendar-months-strip" id="monthsStrip">
+                            <!-- Previous Month -->
+                            <div class="month-view" id="prevMonthView">
+                                <div class="calendar-grid">
+                                    <div class="weekdays">
+                                        <div class="weekday">Sun</div>
+                                        <div class="weekday">Mon</div>
+                                        <div class="weekday">Tue</div>
+                                        <div class="weekday">Wed</div>
+                                        <div class="weekday">Thu</div>
+                                        <div class="weekday">Fri</div>
+                                        <div class="weekday">Sat</div>
+                                    </div>
+                                    <div class="days-grid" id="prevMonthGrid"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Current Month -->
+                            <div class="month-view current-month" id="currentMonthView">
+                                <div class="calendar-grid">
+                                    <div class="weekdays">
+                                        <div class="weekday">Sun</div>
+                                        <div class="weekday">Mon</div>
+                                        <div class="weekday">Tue</div>
+                                        <div class="weekday">Wed</div>
+                                        <div class="weekday">Thu</div>
+                                        <div class="weekday">Fri</div>
+                                        <div class="weekday">Sat</div>
+                                    </div>
+                                    <div class="days-grid" id="currentMonthGrid"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Next Month -->
+                            <div class="month-view" id="nextMonthView">
+                                <div class="calendar-grid">
+                                    <div class="weekdays">
+                                        <div class="weekday">Sun</div>
+                                        <div class="weekday">Mon</div>
+                                        <div class="weekday">Tue</div>
+                                        <div class="weekday">Wed</div>
+                                        <div class="weekday">Thu</div>
+                                        <div class="weekday">Fri</div>
+                                        <div class="weekday">Sat</div>
+                                    </div>
+                                    <div class="days-grid" id="nextMonthGrid"></div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="days-grid" id="daysGrid"></div>
                     </div>
                 </div>
             </div>
@@ -1003,18 +1078,32 @@
             updateNavButtons();
         }
 
-        // Render calendar content (single month)
+        // Render calendar content (three months)
         function renderCalendarContent() {
-            const daysGrid = document.getElementById('daysGrid');
+            const prevMonthGrid = document.getElementById('prevMonthGrid');
+            const currentMonthGrid = document.getElementById('currentMonthGrid');
+            const nextMonthGrid = document.getElementById('nextMonthGrid');
+            
+            // Calculate previous and next months
+            const prevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+            const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+            
+            // Render all three months
+            renderMonthGrid(prevMonthGrid, prevMonth, false);
+            renderMonthGrid(currentMonthGrid, currentMonth, true);
+            renderMonthGrid(nextMonthGrid, nextMonth, false);
+        }
+
+        // Render a single month grid
+        function renderMonthGrid(gridElement, monthDate, isCurrentMonth) {
             const today = new Date();
             const availableDates = getAvailableDates();
             
             // Clear previous days
-            daysGrid.innerHTML = '';
+            gridElement.innerHTML = '';
             
-            // Get first day of month and number of days
-            const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-            const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+            // Get first day of month and calculate start date
+            const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
             const startDate = new Date(firstDay);
             startDate.setDate(startDate.getDate() - firstDay.getDay());
             
@@ -1031,14 +1120,14 @@
                 dayButton.textContent = date.getDate();
                 
                 const dateStr = date.toISOString().split('T')[0];
-                const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
+                const isInCurrentMonth = date.getMonth() === monthDate.getMonth();
                 const isPast = date < today;
                 const hasSlots = availableDates.has(dateStr);
                 const isSelected = selectedDate === dateStr;
                 const isToday = dateStr === todayStr;
                 
                 // Add appropriate classes
-                if (!isCurrentMonth) {
+                if (!isInCurrentMonth) {
                     dayButton.classList.add('other-month');
                 } else if (isPast && !isToday) {
                     dayButton.classList.add('past');
@@ -1053,11 +1142,13 @@
                         dayButton.classList.add('selected');
                     }
                     
-                    // Add click handler for current and future dates
-                    dayButton.addEventListener('click', () => selectDate(dateStr));
+                    // Only add click handler for the current (center) month
+                    if (isCurrentMonth) {
+                        dayButton.addEventListener('click', () => selectDate(dateStr));
+                    }
                 }
                 
-                daysGrid.appendChild(dayButton);
+                gridElement.appendChild(dayButton);
             }
         }
 
@@ -1072,9 +1163,9 @@
             });
         }
 
-        // Animate month transition
+        // Animate month transition with 3-month carousel
         function animateMonthTransition(direction) {
-            const daysGrid = document.getElementById('daysGrid');
+            const monthsStrip = document.getElementById('monthsStrip');
             const monthTitle = document.getElementById('monthTitle');
             
             // Disable navigation during animation
@@ -1086,45 +1177,42 @@
             // Start fade out title
             monthTitle.classList.add('fade-out');
             
-            // Start slide animation
+            // Calculate new transform based on direction
+            let newTransform;
             if (direction === 'next') {
-                daysGrid.classList.add('slide-left');
+                // Show next month (slide left)
+                newTransform = 'translateX(-66.66%)'; // Move to show next month
+                currentMonth.setMonth(currentMonth.getMonth() + 1);
             } else {
-                daysGrid.classList.add('slide-right');
+                // Show previous month (slide right)  
+                newTransform = 'translateX(0%)'; // Move to show prev month
+                currentMonth.setMonth(currentMonth.getMonth() - 1);
             }
             
-            // After slide out completes, update content and slide in
+            // Apply the transform
+            monthsStrip.style.transform = newTransform;
+            
+            // After transition, reset strip and update content
             setTimeout(() => {
-                // Update month
-                if (direction === 'next') {
-                    currentMonth.setMonth(currentMonth.getMonth() + 1);
-                } else {
-                    currentMonth.setMonth(currentMonth.getMonth() - 1);
-                }
-                
                 // Update title
                 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                     'July', 'August', 'September', 'October', 'November', 'December'];
                 monthTitle.textContent = `${monthNames[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`;
                 
-                // Reset grid position for slide in from opposite side
-                daysGrid.style.transition = 'none';
-                if (direction === 'next') {
-                    daysGrid.style.transform = 'translateX(100%)';
-                } else {
-                    daysGrid.style.transform = 'translateX(-100%)';
-                }
+                // Disable transition temporarily for instant reset
+                monthsStrip.classList.add('no-transition');
                 
-                // Re-render calendar content
+                // Reset strip to center position
+                monthsStrip.style.transform = 'translateX(-33.33%)';
+                
+                // Re-render calendar content with new month data
                 renderCalendarContent();
                 
-                // Force reflow then animate in
-                daysGrid.offsetHeight;
-                daysGrid.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-                daysGrid.style.transform = 'translateX(0)';
+                // Force reflow to apply changes
+                monthsStrip.offsetHeight;
                 
-                // Remove animation classes
-                daysGrid.classList.remove('slide-left', 'slide-right');
+                // Re-enable transition
+                monthsStrip.classList.remove('no-transition');
                 
                 // Fade in title
                 setTimeout(() => {
@@ -1133,13 +1221,11 @@
                 
                 // Re-enable navigation
                 setTimeout(() => {
-                    daysGrid.style.transition = '';
-                    daysGrid.style.transform = '';
                     updateNavButtons();
                     prevButton.disabled = false;
                     nextButton.disabled = false;
                     updateNavButtons(); // Apply proper disabled states
-                }, 300);
+                }, 100);
             }, 300);
         }
 
@@ -1867,9 +1953,9 @@
 
         function initTouchHandlers() {
             const calendarWidget = document.querySelector('.calendar-widget');
-            const daysGrid = document.getElementById('daysGrid');
+            const monthsStrip = document.getElementById('monthsStrip');
             
-            if (!calendarWidget || !daysGrid) {
+            if (!calendarWidget || !monthsStrip) {
                 console.error('Calendar elements not found for touch handlers');
                 return;
             }
@@ -1899,7 +1985,7 @@
                 currentTransform = 0;
                 
                 // Reset any existing transitions
-                daysGrid.style.transition = 'none';
+                monthsStrip.style.transition = 'none';
             }, { passive: true });
             
             calendarWidget.addEventListener('touchmove', function(e) {
@@ -1917,28 +2003,30 @@
                         e.preventDefault();
                     }
                     
-                    // Calculate drag resistance - more resistance as user drags further
-                    let transformX = deltaX;
-                    const maxDrag = calendarWidget.offsetWidth * 0.3; // Max 30% of container width
+                    // Calculate transform percentage based on finger movement
+                    const containerWidth = calendarWidget.offsetWidth;
+                    const dragPercent = (deltaX / containerWidth) * 33.33; // Convert to percentage of month width
                     
-                    // Apply resistance curve
-                    if (Math.abs(transformX) > maxDrag) {
-                        const excess = Math.abs(transformX) - maxDrag;
-                        const resistedExcess = excess * 0.2; // 20% resistance for excess movement
-                        transformX = transformX > 0 ? maxDrag + resistedExcess : -(maxDrag + resistedExcess);
-                    }
+                    // Apply resistance when dragging beyond limits
+                    let finalDragPercent = dragPercent;
+                    const maxDrag = 10; // Max 10% drag beyond boundaries
                     
                     // Check navigation constraints
                     const prevButton = document.getElementById('prevMonth');
                     const nextButton = document.getElementById('nextMonth');
                     
-                    // Prevent dragging in disabled directions with stronger resistance
-                    if ((transformX > 0 && prevButton.disabled) || (transformX < 0 && nextButton.disabled)) {
-                        transformX *= 0.1; // Strong resistance for disabled directions
+                    // Apply resistance for disabled directions
+                    if ((dragPercent > 0 && prevButton.disabled) || (dragPercent < 0 && nextButton.disabled)) {
+                        finalDragPercent = dragPercent * 0.1; // Strong resistance
+                    } else if (Math.abs(dragPercent) > maxDrag) {
+                        // Gentle resistance at boundaries
+                        const excess = Math.abs(dragPercent) - maxDrag;
+                        const resistedExcess = excess * 0.3;
+                        finalDragPercent = dragPercent > 0 ? maxDrag + resistedExcess : -(maxDrag + resistedExcess);
                     }
                     
-                    currentTransform = transformX;
-                    daysGrid.style.transform = `translateX(${transformX}px)`;
+                    const newTransform = -33.33 + finalDragPercent; // Start from center position
+                    monthsStrip.style.transform = `translateX(${newTransform}%)`;
                 }
             }, { passive: false });
             
@@ -1969,11 +2057,13 @@
                         animateMonthTransition('next');
                     } else {
                         // Snap back to center if swipe wasn't valid
-                        daysGrid.style.transform = 'translateX(0)';
+                        monthsStrip.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                        monthsStrip.style.transform = 'translateX(-33.33%)';
                     }
                 } else {
                     // Snap back to center if not a valid swipe
-                    daysGrid.style.transform = 'translateX(0)';
+                    monthsStrip.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                    monthsStrip.style.transform = 'translateX(-33.33%)';
                 }
                 
                 // Reset state
@@ -1982,11 +2072,10 @@
                 isDragging = false;
                 currentTransform = 0;
                 
-                // Clear transform and transition after animation
+                // Clear transition after animation
                 setTimeout(() => {
                     if (!isDragging) { // Only clear if not currently dragging
-                        daysGrid.style.transition = '';
-                        daysGrid.style.transform = '';
+                        monthsStrip.style.transition = '';
                     }
                 }, 300);
             }, { passive: false });
