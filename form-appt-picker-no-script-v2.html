@@ -1744,48 +1744,91 @@
             }
         }
 
-        // Touch handling for mobile swipe
+        // Touch handling for mobile swipe with finger tracking
         let touchStartX = null;
         let touchStartY = null;
+        let isDragging = false;
+        let currentTransform = 0;
         const SWIPE_THRESHOLD = 50; // minimum distance for a swipe
-        const SWIPE_VELOCITY_THRESHOLD = 0.3; // minimum velocity for a swipe
+        const DRAG_THRESHOLD = 10; // minimum movement to start dragging
 
         function initTouchHandlers() {
             const calendarWidget = document.querySelector('.calendar-widget');
+            const daysGrid = document.getElementById('daysGrid');
             
-            if (!calendarWidget) {
-                console.error('Calendar widget not found for touch handlers');
+            if (!calendarWidget || !daysGrid) {
+                console.error('Calendar elements not found for touch handlers');
                 return;
             }
             
-            console.log('Touch handlers initialized for calendar widget');
+            console.log('Touch handlers with finger tracking initialized');
             
             calendarWidget.addEventListener('touchstart', function(e) {
                 const touch = e.touches[0];
                 touchStartX = touch.clientX;
                 touchStartY = touch.clientY;
-                console.log('Touch start:', touchStartX, touchStartY);
+                isDragging = false;
+                currentTransform = 0;
+                
+                // Reset any existing transitions
+                daysGrid.style.transition = 'none';
             }, { passive: true });
+            
+            calendarWidget.addEventListener('touchmove', function(e) {
+                if (!touchStartX || !touchStartY) return;
+                
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - touchStartX;
+                const deltaY = touch.clientY - touchStartY;
+                
+                // Check if this is primarily a horizontal swipe
+                if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > DRAG_THRESHOLD) {
+                    if (!isDragging) {
+                        isDragging = true;
+                        // Prevent scrolling when we start dragging horizontally
+                        e.preventDefault();
+                    }
+                    
+                    // Calculate drag resistance - more resistance as user drags further
+                    let transformX = deltaX;
+                    const maxDrag = calendarWidget.offsetWidth * 0.3; // Max 30% of container width
+                    
+                    // Apply resistance curve
+                    if (Math.abs(transformX) > maxDrag) {
+                        const excess = Math.abs(transformX) - maxDrag;
+                        const resistedExcess = excess * 0.2; // 20% resistance for excess movement
+                        transformX = transformX > 0 ? maxDrag + resistedExcess : -(maxDrag + resistedExcess);
+                    }
+                    
+                    // Check navigation constraints
+                    const prevButton = document.getElementById('prevMonth');
+                    const nextButton = document.getElementById('nextMonth');
+                    
+                    // Prevent dragging in disabled directions with stronger resistance
+                    if ((transformX > 0 && prevButton.disabled) || (transformX < 0 && nextButton.disabled)) {
+                        transformX *= 0.1; // Strong resistance for disabled directions
+                    }
+                    
+                    currentTransform = transformX;
+                    daysGrid.style.transform = `translateX(${transformX}px)`;
+                }
+            }, { passive: false });
             
             calendarWidget.addEventListener('touchend', function(e) {
                 if (!touchStartX || !touchStartY) return;
                 
                 const touch = e.changedTouches[0];
-                const touchEndX = touch.clientX;
-                const touchEndY = touch.clientY;
+                const deltaX = touch.clientX - touchStartX;
+                const deltaY = touch.clientY - touchStartY;
                 
-                const deltaX = touchEndX - touchStartX;
-                const deltaY = touchEndY - touchStartY;
+                // Reset transition for smooth snap back
+                daysGrid.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
                 
-                console.log('Touch end - deltaX:', deltaX, 'deltaY:', deltaY);
-                
-                // Check if horizontal swipe is more significant than vertical
-                if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > SWIPE_THRESHOLD) {
-                    console.log('Swipe detected - direction:', deltaX > 0 ? 'right' : 'left');
-                    // Prevent any default behavior
+                // Check if this was a swipe gesture
+                if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > SWIPE_THRESHOLD && isDragging) {
                     e.preventDefault();
                     
-                    // Check if navigation buttons are enabled before allowing swipe
+                    // Check navigation constraints
                     const prevButton = document.getElementById('prevMonth');
                     const nextButton = document.getElementById('nextMonth');
                     
@@ -1795,12 +1838,28 @@
                     } else if (deltaX < 0 && !nextButton.disabled) {
                         // Swipe left - go to next month
                         animateMonthTransition('next');
+                    } else {
+                        // Snap back to center if swipe wasn't valid
+                        daysGrid.style.transform = 'translateX(0)';
                     }
+                } else {
+                    // Snap back to center if not a valid swipe
+                    daysGrid.style.transform = 'translateX(0)';
                 }
                 
-                // Reset touch coordinates
+                // Reset state
                 touchStartX = null;
                 touchStartY = null;
+                isDragging = false;
+                currentTransform = 0;
+                
+                // Clear transform and transition after animation
+                setTimeout(() => {
+                    if (!isDragging) { // Only clear if not currently dragging
+                        daysGrid.style.transition = '';
+                        daysGrid.style.transform = '';
+                    }
+                }, 300);
             }, { passive: false });
         }
 
