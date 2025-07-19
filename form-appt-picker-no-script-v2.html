@@ -169,9 +169,9 @@
             position: relative;
             overflow: hidden;
             width: 100%;
-            /* Add subtle padding to show edges of adjacent months */
-            padding: 0 15px;
-            margin: 0 -15px;
+            /* Add subtle padding to show small edges of adjacent months */
+            padding: 0 8px;
+            margin: 0 -8px;
             box-sizing: content-box;
         }
 
@@ -190,7 +190,7 @@
         .month-view {
             width: 33.33%;
             flex-shrink: 0;
-            padding: 0 5px; /* Small gap between months */
+            padding: 0 2px; /* Minimal gap between months */
             box-sizing: border-box;
         }
 
@@ -200,12 +200,13 @@
             border-radius: 8px;
             overflow: hidden;
             position: relative;
+            margin: 0; /* Remove any default margins */
         }
 
         /* Make non-current months slightly faded */
         .month-view:not(.current-month) {
-            opacity: 0.3;
-            transform: scale(0.95);
+            opacity: 0.2;
+            transform: scale(0.98);
         }
 
         .month-view.current-month {
@@ -1965,6 +1966,7 @@
             // Touch tracking variables
             let touchStartX = null;
             let touchStartY = null;
+            let touchStartTime = null;
             let isDragging = false;
             let currentTransform = 0;
             const DRAG_THRESHOLD = 10; // Minimum pixels before considering a drag
@@ -1981,6 +1983,7 @@
                 const touch = e.touches[0];
                 touchStartX = touch.clientX;
                 touchStartY = touch.clientY;
+                touchStartTime = Date.now();
                 isDragging = false;
                 currentTransform = 0;
                 
@@ -2037,12 +2040,15 @@
                 const deltaX = touch.clientX - touchStartX;
                 const deltaY = touch.clientY - touchStartY;
                 
-                // Reset transition for smooth snap back
-                daysGrid.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                // Calculate swipe velocity and distance for better auto-scroll behavior
+                const swipeVelocity = Math.abs(deltaX) / (Date.now() - touchStartTime);
+                const containerWidth = calendarWidget.offsetWidth;
+                const swipePercent = Math.abs(deltaX) / containerWidth;
                 
-                // Check if this was a swipe gesture (20% of screen width)
-                const swipeThreshold = getSwipeThreshold();
-                if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > swipeThreshold && isDragging) {
+                // More lenient swipe detection: 15% distance OR fast velocity
+                const shouldSwipe = swipePercent > 0.15 || (swipeVelocity > 0.3 && Math.abs(deltaX) > 30);
+                
+                if (Math.abs(deltaX) > Math.abs(deltaY) && shouldSwipe && isDragging) {
                     e.preventDefault();
                     
                     // Check navigation constraints
@@ -2069,6 +2075,7 @@
                 // Reset state
                 touchStartX = null;
                 touchStartY = null;
+                touchStartTime = null;
                 isDragging = false;
                 currentTransform = 0;
                 
