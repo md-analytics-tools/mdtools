@@ -826,7 +826,7 @@
 
         <div class="calendar-section">
             <div class="date-picker">
-                <h5>Select a Date & Time2</h5>
+                <h5>Select a Date & Time3</h5>
                 
                 <!-- Skeleton calendar for loading state -->
                 <div class="skeleton-calendar" id="skeletonCalendar">
@@ -1785,12 +1785,16 @@
                     // Prevent any default behavior
                     e.preventDefault();
                     
-                    if (deltaX > 0) {
+                    // Check if navigation buttons are enabled before allowing swipe
+                    const prevButton = document.getElementById('prevMonth');
+                    const nextButton = document.getElementById('nextMonth');
+                    
+                    if (deltaX > 0 && !prevButton.disabled) {
                         // Swipe right - go to previous month
-                        changeMonth(-1);
-                    } else {
+                        animateMonthTransition('prev');
+                    } else if (deltaX < 0 && !nextButton.disabled) {
                         // Swipe left - go to next month
-                        changeMonth(1);
+                        animateMonthTransition('next');
                     }
                 }
                 
