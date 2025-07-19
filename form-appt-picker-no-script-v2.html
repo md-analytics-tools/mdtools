@@ -1736,6 +1736,51 @@
             }
         }
 
+        // Touch handling for mobile swipe
+        let touchStartX = null;
+        let touchStartY = null;
+        const SWIPE_THRESHOLD = 50; // minimum distance for a swipe
+        const SWIPE_VELOCITY_THRESHOLD = 0.3; // minimum velocity for a swipe
+
+        function initTouchHandlers() {
+            const calendarContainer = document.querySelector('.calendar-container');
+            
+            calendarContainer.addEventListener('touchstart', function(e) {
+                const touch = e.touches[0];
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+            }, { passive: true });
+            
+            calendarContainer.addEventListener('touchend', function(e) {
+                if (!touchStartX || !touchStartY) return;
+                
+                const touch = e.changedTouches[0];
+                const touchEndX = touch.clientX;
+                const touchEndY = touch.clientY;
+                
+                const deltaX = touchEndX - touchStartX;
+                const deltaY = touchEndY - touchStartY;
+                
+                // Check if horizontal swipe is more significant than vertical
+                if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > SWIPE_THRESHOLD) {
+                    // Prevent any default behavior
+                    e.preventDefault();
+                    
+                    if (deltaX > 0) {
+                        // Swipe right - go to previous month
+                        changeMonth(-1);
+                    } else {
+                        // Swipe left - go to next month
+                        changeMonth(1);
+                    }
+                }
+                
+                // Reset touch coordinates
+                touchStartX = null;
+                touchStartY = null;
+            }, { passive: false });
+        }
+
         // Initialize the application
         document.addEventListener('DOMContentLoaded', async function() {
             // Show skeleton loading
@@ -1750,6 +1795,7 @@
             initializeCalendar();
             setupTimezoneHandler();
             updateTimezoneOptions();
+            initTouchHandlers();
             
             // Update times every minute
             setInterval(updateTimezoneOptions, 60000);
