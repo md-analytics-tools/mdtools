@@ -169,16 +169,14 @@
             position: relative;
             overflow: hidden;
             width: 100%;
-            /* Add subtle padding to show small edges of adjacent months */
-            padding: 0 8px;
-            margin: 0 -8px;
-            box-sizing: content-box;
+            margin: 0;
+            padding: 0;
         }
 
         .calendar-months-strip {
             display: flex;
-            width: 300%; /* 3 months side by side */
-            transform: translateX(-33.33%); /* Center the current month */
+            width: 320%; /* Slightly wider to show edges */
+            transform: translateX(-31.25%); /* Center the current month */
             transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             position: relative;
         }
@@ -188,9 +186,9 @@
         }
 
         .month-view {
-            width: 33.33%;
+            width: 31.25%; /* Slightly smaller to fit better */
             flex-shrink: 0;
-            padding: 0 2px; /* Minimal gap between months */
+            padding: 0;
             box-sizing: border-box;
         }
 
@@ -200,13 +198,23 @@
             border-radius: 8px;
             overflow: hidden;
             position: relative;
-            margin: 0; /* Remove any default margins */
+            margin: 0 3px; /* Small margin only on calendar grid */
+        }
+
+        .month-view .weekdays {
+            padding: 0;
+            margin: 0;
+        }
+
+        .month-view .days-grid {
+            padding: 0;
+            margin: 0;
         }
 
         /* Make non-current months slightly faded */
         .month-view:not(.current-month) {
-            opacity: 0.2;
-            transform: scale(0.98);
+            opacity: 0.15;
+            transform: scale(0.95);
         }
 
         .month-view.current-month {
@@ -1182,7 +1190,7 @@
             let newTransform;
             if (direction === 'next') {
                 // Show next month (slide left)
-                newTransform = 'translateX(-66.66%)'; // Move to show next month
+                newTransform = 'translateX(-62.5%)'; // Move to show next month
                 currentMonth.setMonth(currentMonth.getMonth() + 1);
             } else {
                 // Show previous month (slide right)  
@@ -1204,7 +1212,7 @@
                 monthsStrip.classList.add('no-transition');
                 
                 // Reset strip to center position
-                monthsStrip.style.transform = 'translateX(-33.33%)';
+                monthsStrip.style.transform = 'translateX(-31.25%)';
                 
                 // Re-render calendar content with new month data
                 renderCalendarContent();
@@ -2008,7 +2016,7 @@
                     
                     // Calculate transform percentage based on finger movement
                     const containerWidth = calendarWidget.offsetWidth;
-                    const dragPercent = (deltaX / containerWidth) * 33.33; // Convert to percentage of month width
+                    const dragPercent = (deltaX / containerWidth) * 31.25; // Convert to percentage of month width
                     
                     // Apply resistance when dragging beyond limits
                     let finalDragPercent = dragPercent;
@@ -2028,7 +2036,7 @@
                         finalDragPercent = dragPercent > 0 ? maxDrag + resistedExcess : -(maxDrag + resistedExcess);
                     }
                     
-                    const newTransform = -33.33 + finalDragPercent; // Start from center position
+                    const newTransform = -31.25 + finalDragPercent; // Start from center position
                     monthsStrip.style.transform = `translateX(${newTransform}%)`;
                 }
             }, { passive: false });
@@ -2064,12 +2072,12 @@
                     } else {
                         // Snap back to center if swipe wasn't valid
                         monthsStrip.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-                        monthsStrip.style.transform = 'translateX(-33.33%)';
+                        monthsStrip.style.transform = 'translateX(-31.25%)';
                     }
                 } else {
                     // Snap back to center if not a valid swipe
                     monthsStrip.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-                    monthsStrip.style.transform = 'translateX(-33.33%)';
+                    monthsStrip.style.transform = 'translateX(-31.25%)';
                 }
                 
                 // Reset state
