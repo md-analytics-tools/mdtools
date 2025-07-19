@@ -33,12 +33,6 @@
             border-radius: 8px;
         }
 
-        /* Remove margins when in iframe */
-        body.in-iframe .appointment-container {
-            margin: 0;
-            padding: 0;
-        }
-
         .header {
             text-align: center;
             margin-bottom: 25px;
@@ -154,27 +148,6 @@
             padding: 0;
             overflow: hidden;
             position: relative;
-        }
-
-        /* Enhanced swipe container for adjacent months */
-        .calendar-swipe-container {
-            display: flex;
-            width: 300%; /* Space for prev, current, next months */
-            position: relative;
-            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .calendar-swipe-container.no-transition {
-            transition: none;
-        }
-
-        .month-view {
-            width: 33.333%; /* Each month takes 1/3 of container */
-            flex-shrink: 0;
-        }
-
-        .month-view .days-grid {
-            transition: none; /* Individual month grids don't animate */
         }
 
         .days-grid {
@@ -923,17 +896,7 @@
                             <div class="weekday">Fri</div>
                             <div class="weekday">Sat</div>
                         </div>
-                        <div class="calendar-swipe-container" id="swipeContainer">
-                            <div class="month-view" id="prevMonthView">
-                                <div class="days-grid" id="prevDaysGrid"></div>
-                            </div>
-                            <div class="month-view" id="currentMonthView">
-                                <div class="days-grid" id="daysGrid"></div>
-                            </div>
-                            <div class="month-view" id="nextMonthView">
-                                <div class="days-grid" id="nextDaysGrid"></div>
-                            </div>
-                        </div>
+                        <div class="days-grid" id="daysGrid"></div>
                     </div>
                 </div>
             </div>
@@ -998,7 +961,6 @@
         // Render the calendar
         function renderCalendar() {
             const monthTitle = document.getElementById('monthTitle');
-            const swipeContainer = document.getElementById('swipeContainer');
             
             // Set month title
             monthTitle.textContent = currentMonth.toLocaleDateString('en-US', {
@@ -1006,14 +968,8 @@
                 year: 'numeric'
             });
             
-            // Render calendar content - use multi-month if swipe container exists
-            if (swipeContainer) {
-                renderAdjacentMonths();
-                // Ensure swipe container is positioned correctly
-                swipeContainer.style.transform = 'translateX(-33.333%)';
-            } else {
-                renderCalendarContent();
-            }
+            // Render calendar content
+            renderCalendarContent();
             
             // Update navigation button states
             updateNavButtons();
@@ -1880,88 +1836,19 @@
             return classes.join(' ');
         }
 
-        // Render adjacent months for smooth swiping
-        function renderAdjacentMonths() {
-            const prevMonth = new Date(currentMonth);
-            prevMonth.setMonth(prevMonth.getMonth() - 1);
-            const nextMonth = new Date(currentMonth);
-            nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-            // Render previous month
-            renderMonthInGrid('prevDaysGrid', prevMonth);
-            
-            // Render current month (keep existing logic)
-            renderCalendarContent();
-            
-            // Render next month
-            renderMonthInGrid('nextDaysGrid', nextMonth);
-        }
-
-        // Render a specific month in a specific grid
-        function renderMonthInGrid(gridId, monthDate) {
-            const daysGrid = document.getElementById(gridId);
-            if (!daysGrid) return;
-
-            const availableDates = getAvailableDates();
-            const today = new Date();
-            const todayStr = getCurrentDateInTimezone();
-            
-            const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-            const startDate = new Date(firstDay);
-            startDate.setDate(startDate.getDate() - firstDay.getDay());
-            
-            daysGrid.innerHTML = '';
-            
-            for (let i = 0; i < 42; i++) {
-                const date = new Date(startDate);
-                date.setDate(startDate.getDate() + i);
-                
-                const dayButton = document.createElement('button');
-                dayButton.className = 'calendar-day';
-                dayButton.textContent = date.getDate();
-                
-                const dateStr = date.toISOString().split('T')[0];
-                const isCurrentMonth = date.getMonth() === monthDate.getMonth();
-                const isPast = date < today;
-                const hasSlots = availableDates.has(dateStr);
-                const isSelected = selectedDate === dateStr;
-                const isToday = dateStr === todayStr;
-                
-                // Add appropriate classes
-                if (!isCurrentMonth) {
-                    dayButton.classList.add('other-month');
-                } else if (isPast && !isToday) {
-                    dayButton.classList.add('past');
-                } else {
-                    if (isToday) dayButton.classList.add('today');
-                    if (hasSlots) dayButton.classList.add('has-slots');
-                    if (isSelected) dayButton.classList.add('selected');
-                    
-                    // Add click handler for current and future dates
-                    dayButton.addEventListener('click', () => selectDate(dateStr));
-                }
-                
-                daysGrid.appendChild(dayButton);
-            }
-        }
-
         function initTouchHandlers() {
             const calendarWidget = document.querySelector('.calendar-widget');
-            const swipeContainer = document.getElementById('swipeContainer');
-            const monthTitle = document.getElementById('monthTitle');
+            const daysGrid = document.getElementById('daysGrid');
             
-            if (!calendarWidget || !swipeContainer) {
+            if (!calendarWidget || !daysGrid) {
                 console.error('Calendar elements not found for touch handlers');
                 return;
             }
             
             console.log('Touch handlers with finger tracking initialized');
             
-            // Initialize swipe container position (middle month visible)
-            swipeContainer.style.transform = 'translateX(-33.333%)';
-            
-            // Preload and render adjacent months
-            renderAdjacentMonths();
+            // Preload adjacent months on initialization
+            preloadAdjacentMonths();
             
             calendarWidget.addEventListener('touchstart', function(e) {
                 const touch = e.touches[0];
@@ -1971,8 +1858,7 @@
                 currentTransform = 0;
                 
                 // Reset any existing transitions
-                swipeContainer.classList.add('no-transition');
-                if (monthTitle) monthTitle.style.transition = 'none';
+                daysGrid.style.transition = 'none';
             }, { passive: true });
             
             calendarWidget.addEventListener('touchmove', function(e) {
@@ -1986,44 +1872,32 @@
                 if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > DRAG_THRESHOLD) {
                     if (!isDragging) {
                         isDragging = true;
+                        // Prevent scrolling when we start dragging horizontally
                         e.preventDefault();
                     }
                     
-                    // Calculate base transform (start from middle month position)
-                    const baseTransform = -33.333; // Middle month position
-                    const containerWidth = calendarWidget.offsetWidth;
-                    const dragPercent = (deltaX / containerWidth) * 33.333; // Convert to percentage
+                    // Calculate drag resistance - more resistance as user drags further
+                    let transformX = deltaX;
+                    const maxDrag = calendarWidget.offsetWidth * 0.3; // Max 30% of container width
                     
-                    // Apply resistance for over-dragging
-                    let finalDragPercent = dragPercent;
-                    const maxDrag = 16.666; // Half a month width
-                    
-                    if (Math.abs(dragPercent) > maxDrag) {
-                        const excess = Math.abs(dragPercent) - maxDrag;
-                        const resistedExcess = excess * 0.2;
-                        finalDragPercent = dragPercent > 0 ? maxDrag + resistedExcess : -(maxDrag + resistedExcess);
+                    // Apply resistance curve
+                    if (Math.abs(transformX) > maxDrag) {
+                        const excess = Math.abs(transformX) - maxDrag;
+                        const resistedExcess = excess * 0.2; // 20% resistance for excess movement
+                        transformX = transformX > 0 ? maxDrag + resistedExcess : -(maxDrag + resistedExcess);
                     }
                     
                     // Check navigation constraints
                     const prevButton = document.getElementById('prevMonth');
                     const nextButton = document.getElementById('nextMonth');
                     
-                    if ((finalDragPercent > 0 && prevButton.disabled) || (finalDragPercent < 0 && nextButton.disabled)) {
-                        finalDragPercent *= 0.1;
+                    // Prevent dragging in disabled directions with stronger resistance
+                    if ((transformX > 0 && prevButton.disabled) || (transformX < 0 && nextButton.disabled)) {
+                        transformX *= 0.1; // Strong resistance for disabled directions
                     }
                     
-                    currentTransform = finalDragPercent;
-                    const finalTransform = baseTransform + finalDragPercent;
-                    
-                    // Apply transform to swipe container
-                    swipeContainer.style.transform = `translateX(${finalTransform}%)`;
-                    
-                    // Update month title opacity based on drag progress
-                    if (monthTitle) {
-                        const dragProgress = Math.abs(finalDragPercent) / maxDrag;
-                        const opacity = Math.max(0.3, 1 - dragProgress * 0.7);
-                        monthTitle.style.opacity = opacity;
-                    }
+                    currentTransform = transformX;
+                    daysGrid.style.transform = `translateX(${transformX}px)`;
                 }
             }, { passive: false });
             
@@ -2034,12 +1908,8 @@
                 const deltaX = touch.clientX - touchStartX;
                 const deltaY = touch.clientY - touchStartY;
                 
-                // Reset transitions
-                swipeContainer.classList.remove('no-transition');
-                if (monthTitle) {
-                    monthTitle.style.transition = 'opacity 0.3s ease';
-                    monthTitle.style.opacity = '1';
-                }
+                // Reset transition for smooth snap back
+                daysGrid.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
                 
                 // Check if this was a swipe gesture (20% of screen width)
                 const swipeThreshold = getSwipeThreshold();
@@ -2057,12 +1927,12 @@
                         // Swipe left - go to next month
                         animateMonthTransition('next');
                     } else {
-                        // Snap back to center
-                        swipeContainer.style.transform = 'translateX(-33.333%)';
+                        // Snap back to center if swipe wasn't valid
+                        daysGrid.style.transform = 'translateX(0)';
                     }
                 } else {
                     // Snap back to center if not a valid swipe
-                    swipeContainer.style.transform = 'translateX(-33.333%)';
+                    daysGrid.style.transform = 'translateX(0)';
                 }
                 
                 // Reset state
@@ -2070,12 +1940,15 @@
                 touchStartY = null;
                 isDragging = false;
                 currentTransform = 0;
+                
+                // Clear transform and transition after animation
+                setTimeout(() => {
+                    if (!isDragging) { // Only clear if not currently dragging
+                        daysGrid.style.transition = '';
+                        daysGrid.style.transform = '';
+                    }
+                }, 300);
             }, { passive: false });
-        }
-
-        // Detect if we're in an iframe and apply CSS class
-        if (window !== window.parent) {
-            document.body.classList.add('in-iframe');
         }
 
         // Initialize the application
