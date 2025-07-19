@@ -826,7 +826,7 @@
 
         <div class="calendar-section">
             <div class="date-picker">
-                <h5>Select a Date & Time</h5>
+                <h5>Select a Date & Time2</h5>
                 
                 <!-- Skeleton calendar for loading state -->
                 <div class="skeleton-calendar" id="skeletonCalendar">
@@ -1751,15 +1751,23 @@
         const SWIPE_VELOCITY_THRESHOLD = 0.3; // minimum velocity for a swipe
 
         function initTouchHandlers() {
-            const calendarContainer = document.querySelector('.calendar-container');
+            const calendarWidget = document.querySelector('.calendar-widget');
             
-            calendarContainer.addEventListener('touchstart', function(e) {
+            if (!calendarWidget) {
+                console.error('Calendar widget not found for touch handlers');
+                return;
+            }
+            
+            console.log('Touch handlers initialized for calendar widget');
+            
+            calendarWidget.addEventListener('touchstart', function(e) {
                 const touch = e.touches[0];
                 touchStartX = touch.clientX;
                 touchStartY = touch.clientY;
+                console.log('Touch start:', touchStartX, touchStartY);
             }, { passive: true });
             
-            calendarContainer.addEventListener('touchend', function(e) {
+            calendarWidget.addEventListener('touchend', function(e) {
                 if (!touchStartX || !touchStartY) return;
                 
                 const touch = e.changedTouches[0];
@@ -1769,8 +1777,11 @@
                 const deltaX = touchEndX - touchStartX;
                 const deltaY = touchEndY - touchStartY;
                 
+                console.log('Touch end - deltaX:', deltaX, 'deltaY:', deltaY);
+                
                 // Check if horizontal swipe is more significant than vertical
                 if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > SWIPE_THRESHOLD) {
+                    console.log('Swipe detected - direction:', deltaX > 0 ? 'right' : 'left');
                     // Prevent any default behavior
                     e.preventDefault();
                     
