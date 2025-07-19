@@ -1457,6 +1457,12 @@
         function confirmAppointment() {
             if (!selectedSlot) return;
 
+            // Hide the appointment picker when continuing to form
+            const appointmentContainer = document.querySelector('.appointment-container');
+            if (appointmentContainer) {
+                appointmentContainer.style.display = 'none';
+            }
+
             // Send message to parent when "continue to form" is clicked
             const confirmationElement = document.getElementById('confirmation');
             const confirmationRect = confirmationElement.getBoundingClientRect();
@@ -1515,6 +1521,12 @@
         function resetSelection() {
             selectedSlot = null;
             selectedDate = null;
+            
+            // Show the appointment container again (in case it was hidden)
+            const appointmentContainer = document.querySelector('.appointment-container');
+            if (appointmentContainer) {
+                appointmentContainer.style.display = 'block';
+            }
             
             // Remove selection from slots
             document.querySelectorAll('.time-slot.selected').forEach(el => {
