@@ -131,7 +131,7 @@
         }
 
         .calendar-title {
-            font-size: 22px;
+            font-size: 24.2px;
             font-weight: 500;
             margin: 0;
         }
@@ -1377,7 +1377,7 @@
             
             const timezoneDisplay = timezoneDisplayNames[selectedTimezone] || 'Pacific';
             
-            confirmationText.textContent = `${date} from ${startTime} to ${endTime} ${timezoneDisplay}`;
+            confirmationText.innerHTML = `${date}<br>${startTime} to ${endTime} ${timezoneDisplay}`;
             
             confirmation.classList.add('show');
             
