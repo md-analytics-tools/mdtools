@@ -24,9 +24,9 @@
 <link href="https://cdn.jotfor.ms/s/static/03bca480bb9/static/formCss.css" rel="stylesheet" type="text/css" />
 <link type="text/css" rel="stylesheet" href="https://cdn.jotfor.ms/stylebuilder/static/form-common.css?v=87bd99f
 "/>
-<link type="text/css" rel="stylesheet" href="https://cdn.jotfor.ms/css/styles/nova.css?3.3.64099" />
+<link type="text/css" rel="stylesheet" href="https://cdn.jotfor.ms/css/styles/nova.css?3.3.64098" />
 <style type="text/css">@media print{*{-webkit-print-color-adjust: exact !important;color-adjust: exact !important;}.form-section{display:inline!important}.form-pagebreak{display:none!important}.form-section-closed{height:auto!important}.page-section{position:initial!important}}</style>
-<link type="text/css" rel="stylesheet" href="https://cdn.jotfor.ms/css/styles/payment/payment_feature.css?3.3.64099" />
+<link type="text/css" rel="stylesheet" href="https://cdn.jotfor.ms/css/styles/payment/payment_feature.css?3.3.64098" />
 <style type="text/css">
     .form-label-left{
         width:350px;
@@ -1604,7 +1604,7 @@ JotForm.paymentExtrasOnTheFly([null,{"name":"email_appointment","qid":"1","subLa
 </script>
 </head>
 <body>
-<form class="jotform-form" onsubmit="return typeof testSubmitFunction !== 'undefined' && testSubmitFunction();" action="https://hipaa-submit.jotform.com/submit/251305644776158" method="post" enctype="multipart/form-data" name="form_251305644776158" id="251305644776158" accept-charset="utf-8" autocomplete="on"><input type="hidden" name="formID" value="251305644776158" /><input type="hidden" id="JWTContainer" value="" /><input type="hidden" id="cardinalOrderNumber" value="" /><input type="hidden" id="jsExecutionTracker" name="jsExecutionTracker" value="build-date-1752888667824" /><input type="hidden" id="submitSource" name="submitSource" value="unknown" /><input type="hidden" id="submitDate" name="submitDate" value="undefined" /><input type="hidden" id="buildDate" name="buildDate" value="1752888667824" /><input type="hidden" name="uploadServerUrl" value="https://upload.jotform.com/upload" /><input type="hidden" name="eventObserver" value="1" />
+<form class="jotform-form" onsubmit="return typeof testSubmitFunction !== 'undefined' && testSubmitFunction();" action="https://hipaa-submit.jotform.com/submit/251305644776158" method="post" enctype="multipart/form-data" name="form_251305644776158" id="251305644776158" accept-charset="utf-8" autocomplete="on"><input type="hidden" name="formID" value="251305644776158" /><input type="hidden" id="JWTContainer" value="" /><input type="hidden" id="cardinalOrderNumber" value="" /><input type="hidden" id="jsExecutionTracker" name="jsExecutionTracker" value="build-date-1752874931615" /><input type="hidden" id="submitSource" name="submitSource" value="unknown" /><input type="hidden" id="submitDate" name="submitDate" value="undefined" /><input type="hidden" id="buildDate" name="buildDate" value="1752874931615" /><input type="hidden" name="uploadServerUrl" value="https://upload.jotform.com/upload" /><input type="hidden" name="eventObserver" value="1" />
   <div role="main" class="form-all">
     <ul class="form-section page-section" role="presentation">
       <li class="form-line always-hidden" data-type="control_dropdown" id="id_89"><label class="form-label form-label-top form-label-auto" id="label_89" for="input_89" aria-hidden="false"> Location </label>
@@ -2307,5 +2307,68 @@ JotForm.paymentExtrasOnTheFly([null,{"name":"email_appointment","qid":"1","subLa
       all_spc[i].value = "251305644776158-251305644776158";
     }
   </script>
+<!-- 🧩 auto‑inserted mdtools block -->
+<script>
+/* make a shared namespace on window */
+window.selectedAppointment = '';   // default empty string
+
+/* ───── slot listener ────────────────────────────────────────────── */
+(function () {
+  const FIELD_ID = 'input_101';
+
+  window.addEventListener('message', (evt) => {
+    let slotText = null;
+
+    if (evt?.data?.type === 'appointmentSelected' && evt.data.data) {
+      slotText = evt.data.data.label ?? evt.data.data.start;
+    } else if (evt?.data?.type === 'debugFill') {
+      slotText = evt.data.slot;
+    }
+    if (!slotText) return;
+
+    /* 1️⃣  Put it in the form field so Jotform sees it */
+    const el = document.getElementById(FIELD_ID);
+    if (el) {
+      el.value = slotText;
+      ['input','change','blur'].forEach(ev =>
+        el.dispatchEvent(new Event(ev, { bubbles:true })));
+    }
+
+    /* 2️⃣  Keep an extra copy for testSubmitFunction() */
+    window.selectedAppointment = slotText;
+  }, false);
+})();
+
+/* jotform → parent bridge */
+function testSubmitFunction() {
+  const emojiRE = /(👂🏻|👃🏻|🗣️)/gu;
+  const serviceLine = document.getElementById("input_6")?.value || "";
+  const serviceLineCleaned = serviceLine.replace(emojiRE,'').trim();
+  var appointmentDateTime = String(
+    document.getElementById('input_101')?.value ||
+    window.selectedAppointment ||   '');
+  console.log('🗓️ appointment_date_time:', appointmentDateTime);
+
+  const data = {
+    location:                document.getElementById("input_89")?.value || "",
+    provider:                document.getElementById("input_90")?.value || "",
+    appointment_date_time:   appointmentDateTime,
+    serviceLine:             serviceLineCleaned,
+    condition:               document.getElementById("input_48")?.value || "",
+    urgent:                  document.getElementById("input_58")?.value || "",
+    extra_services:          document.getElementById("input_57")?.value || "",
+    unsecure_text_ok:        document.getElementById("input_84")?.value || "",
+    insurance:               document.getElementById("input_16")?.value || "",
+    otherInsurances:         document.getElementById("input_26")?.value || "",
+    email:                   document.getElementById("input_1") ?.value || "",
+    phone_number:            (document.getElementById("input_11")?.value || "").replace(/\D/g,""),
+    newsletter:              document.getElementById("input_5_0")?.checked || false
+  };
+
+  window.parent.postMessage({ type: "jotformSubmission", data }, "*");
+  return true;
+}
+</script>
+<!-- /🧩 mdtools block -->
 </form></body>
 </html><script type="text/javascript">JotForm.forwardToHIPAA=true;</script><script type="text/javascript">JotForm.isNewSACL=true;</script>
