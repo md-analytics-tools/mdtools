@@ -1103,11 +1103,13 @@
                     monthTitle.classList.remove('fade-out');
                 }, 50);
                 
-                // Re-enable navigation
+                // Re-enable navigation and preload adjacent months
                 setTimeout(() => {
                     daysGrid.style.transition = '';
                     daysGrid.style.transform = '';
                     updateNavButtons();
+                    // Preload next adjacent months for smooth swiping
+                    preloadAdjacentMonths();
                 }, 300);
             }, 300);
         }
@@ -1749,8 +1751,90 @@
         let touchStartY = null;
         let isDragging = false;
         let currentTransform = 0;
-        const SWIPE_THRESHOLD = 50; // minimum distance for a swipe
+        let preloadedMonths = {};
         const DRAG_THRESHOLD = 10; // minimum movement to start dragging
+        
+        // Dynamic swipe threshold based on screen width (20% of screen width)
+        function getSwipeThreshold() {
+            return window.innerWidth * 0.2;
+        }
+
+        // Preload adjacent months for smooth swiping
+        function preloadAdjacentMonths() {
+            const prevMonth = new Date(currentMonth);
+            prevMonth.setMonth(prevMonth.getMonth() - 1);
+            const nextMonth = new Date(currentMonth);
+            nextMonth.setMonth(nextMonth.getMonth() + 1);
+            
+            const prevKey = `${prevMonth.getFullYear()}-${prevMonth.getMonth()}`;
+            const nextKey = `${nextMonth.getFullYear()}-${nextMonth.getMonth()}`;
+            
+            // Preload previous month
+            if (!preloadedMonths[prevKey]) {
+                preloadedMonths[prevKey] = generateMonthData(prevMonth);
+            }
+            
+            // Preload next month  
+            if (!preloadedMonths[nextKey]) {
+                preloadedMonths[nextKey] = generateMonthData(nextMonth);
+            }
+        }
+        
+        // Generate month calendar data without rendering
+        function generateMonthData(monthDate) {
+            const availableDates = getAvailableDates();
+            const today = new Date();
+            const todayStr = getCurrentDateInTimezone();
+            
+            const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+            const lastDay = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+            
+            const days = [];
+            for (let i = 0; i < 42; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                
+                const dateStr = date.toISOString().split('T')[0];
+                const isCurrentMonth = date.getMonth() === monthDate.getMonth();
+                const isPast = date < today;
+                const hasSlots = availableDates.has(dateStr);
+                const isToday = dateStr === todayStr;
+                
+                days.push({
+                    date: date.getDate(),
+                    dateStr,
+                    isCurrentMonth,
+                    isPast,
+                    hasSlots,
+                    isToday,
+                    classes: getDateClasses(isCurrentMonth, isPast, hasSlots, isToday, false)
+                });
+            }
+            
+            return {
+                title: `${monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
+                days
+            };
+        }
+        
+        // Helper function to get CSS classes for a date
+        function getDateClasses(isCurrentMonth, isPast, hasSlots, isToday, isSelected) {
+            const classes = ['calendar-day'];
+            
+            if (!isCurrentMonth) {
+                classes.push('other-month');
+            } else if (isPast && !isToday) {
+                classes.push('past');
+            } else {
+                if (isToday) classes.push('today');
+                if (hasSlots) classes.push('has-slots');
+                if (isSelected) classes.push('selected');
+            }
+            
+            return classes.join(' ');
+        }
 
         function initTouchHandlers() {
             const calendarWidget = document.querySelector('.calendar-widget');
@@ -1762,6 +1846,9 @@
             }
             
             console.log('Touch handlers with finger tracking initialized');
+            
+            // Preload adjacent months on initialization
+            preloadAdjacentMonths();
             
             calendarWidget.addEventListener('touchstart', function(e) {
                 const touch = e.touches[0];
@@ -1824,8 +1911,9 @@
                 // Reset transition for smooth snap back
                 daysGrid.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
                 
-                // Check if this was a swipe gesture
-                if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > SWIPE_THRESHOLD && isDragging) {
+                // Check if this was a swipe gesture (20% of screen width)
+                const swipeThreshold = getSwipeThreshold();
+                if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > swipeThreshold && isDragging) {
                     e.preventDefault();
                     
                     // Check navigation constraints
@@ -1878,6 +1966,9 @@
             setupTimezoneHandler();
             updateTimezoneOptions();
             initTouchHandlers();
+            
+            // Preload adjacent months for smooth swiping
+            preloadAdjacentMonths();
             
             // Update times every minute
             setInterval(updateTimezoneOptions, 60000);
