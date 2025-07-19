@@ -1461,6 +1461,16 @@
             const appointmentContainer = document.querySelector('.appointment-container');
             if (appointmentContainer) {
                 appointmentContainer.style.display = 'none';
+                
+                // Send height update to collapse the iframe
+                const message = {
+                    type: "pickerHeight",
+                    value: 0
+                };
+                console.log("📏 Sending collapse height message:", message);
+                if (window.parent !== window) {
+                    window.parent.postMessage(message, "*");
+                }
             }
 
             // Send message to parent when "continue to form" is clicked
@@ -1526,6 +1536,11 @@
             const appointmentContainer = document.querySelector('.appointment-container');
             if (appointmentContainer) {
                 appointmentContainer.style.display = 'block';
+                
+                // Send height update to restore normal iframe height
+                setTimeout(() => {
+                    postHeight();
+                }, 100);
             }
             
             // Remove selection from slots
