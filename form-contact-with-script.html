@@ -2344,32 +2344,9 @@ function testSubmitFunction() {
   const emojiRE = /(👂🏻|👃🏻|🗣️)/gu;
   const serviceLine = document.getElementById("input_6")?.value || "";
   const serviceLineCleaned = serviceLine.replace(emojiRE,'').trim();
-  // var appointmentDateTime = String(
-  //   document.getElementById('input_101')?.value ||
-  //   window.selectedAppointment ||   '');
-
-/* 1️⃣  Pull the raw value *********************************************/
-const raw_appointment_date_time =
-  document.getElementById('input_101')?.value?.trim() ||
-  window.selectedAppointment;
-
-/* 2️⃣  If it’s JSON text, parse it ***********************************/
-let appointment_date_time = raw_appointment_date_time;
-
-if (typeof appointment_date_time === 'string') {
-  try {
-    appointment_date_time = JSON.parse(appointment_date_time);
-  } catch (e) {
-    console.warn('Bad appointment JSON', e);
-    // leave it as‑is (string) so you still capture something
-  }
-}
-
-/* 3️⃣  Verify the type before tracking ******************************/
-console.log('about to track →', typeof appointment_date_time, appointment_date_time);
-
-
-
+  var appointmentDateTime = String(
+    document.getElementById('input_101')?.value ||
+    window.selectedAppointment ||   '');
   console.log('🗓️ appointment_date_time:', appointmentDateTime);
 
   const data = {

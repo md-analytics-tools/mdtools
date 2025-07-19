@@ -1378,34 +1378,14 @@
             const confirmationRect = confirmationElement.getBoundingClientRect();
             const scrollNeeded = Math.max(0, confirmationRect.top - 20);
             
-            // Create ISO timestamp strings in Pacific time
+            // Get start date/time in Pacific time
             const startTime = convertToPacificISO(selectedSlot.start);
-            const endTime = convertToPacificISO(selectedSlot.end);
             
-            // Calculate duration in minutes
-            const durationMs = new Date(selectedSlot.end) - new Date(selectedSlot.start);
-            const duration = Math.round(durationMs / (1000 * 60)); // Convert to minutes
-            
-            // Create slot object with required IDs
-            const slotInfo = {
-                facility_id: 10277771,
-                provider_id: 10193404,
-                resource_id: 10191884
-            };
-            
-            // Create appointment JSON object
-            const appointmentJson = {
-                startTime: startTime,
-                endTime: endTime,
-                duration: duration,
-                slotInfo: slotInfo
-            };
-            
-            console.log("📋 Appointment JSON created:", appointmentJson);
+            console.log("📋 Appointment start time (Pacific):", startTime);
             
             const message = {
                 type: "continueToForm",
-                appointment: appointmentJson,
+                appointment: startTime,
                 scrollNeeded: scrollNeeded
             };
             console.log("✅ Sending continueToForm message:", message);
