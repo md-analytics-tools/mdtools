@@ -170,25 +170,16 @@
             position: relative;
         }
 
-        /* Carousel container for multiple months */
-        .calendar-carousel {
-            display: flex;
-            width: 300%; /* 3 months side by side */
-            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            transform: translateX(-33.33%); /* Start with current month in center */
-        }
-
-        .calendar-carousel.no-transition {
-            transition: none;
-        }
-
-        .month-container {
-            width: 33.33%;
-            flex-shrink: 0;
-        }
-
         .days-grid {
-            transition: none; /* Remove transition from individual grids */
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .days-grid.slide-left {
+            transform: translateX(-100%);
+        }
+
+        .days-grid.slide-right {
+            transform: translateX(100%);
         }
 
         .days-grid.slide-left {
@@ -933,17 +924,7 @@
                             <div class="weekday">Fri</div>
                             <div class="weekday">Sat</div>
                         </div>
-                        <div class="calendar-carousel" id="calendarCarousel">
-                            <div class="month-container">
-                                <div class="days-grid" id="prevMonthGrid"></div>
-                            </div>
-                            <div class="month-container">
-                                <div class="days-grid" id="currentMonthGrid"></div>
-                            </div>
-                            <div class="month-container">
-                                <div class="days-grid" id="nextMonthGrid"></div>
-                            </div>
-                        </div>
+                        <div class="days-grid" id="daysGrid"></div>
                     </div>
                 </div>
             </div>
@@ -1022,33 +1003,18 @@
             updateNavButtons();
         }
 
-        // Render calendar content (carousel with 3 months)
+        // Render calendar content (single month)
         function renderCalendarContent() {
-            const prevMonthGrid = document.getElementById('prevMonthGrid');
-            const currentMonthGrid = document.getElementById('currentMonthGrid');
-            const nextMonthGrid = document.getElementById('nextMonthGrid');
-            
-            // Clear all grids
-            prevMonthGrid.innerHTML = '';
-            currentMonthGrid.innerHTML = '';
-            nextMonthGrid.innerHTML = '';
-            
-            // Render previous, current, and next months
-            const prevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
-            const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
-            
-            renderMonthGrid(prevMonthGrid, prevMonth);
-            renderMonthGrid(currentMonthGrid, currentMonth);
-            renderMonthGrid(nextMonthGrid, nextMonth);
-        }
-
-        // Render a single month grid
-        function renderMonthGrid(gridElement, monthDate) {
+            const daysGrid = document.getElementById('daysGrid');
             const today = new Date();
             const availableDates = getAvailableDates();
             
-            // Get first day of month and calculate start date
-            const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+            // Clear previous days
+            daysGrid.innerHTML = '';
+            
+            // Get first day of month and number of days
+            const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+            const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
             const startDate = new Date(firstDay);
             startDate.setDate(startDate.getDate() - firstDay.getDay());
             
@@ -1065,7 +1031,7 @@
                 dayButton.textContent = date.getDate();
                 
                 const dateStr = date.toISOString().split('T')[0];
-                const isCurrentMonth = date.getMonth() === monthDate.getMonth();
+                const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
                 const isPast = date < today;
                 const hasSlots = availableDates.has(dateStr);
                 const isSelected = selectedDate === dateStr;
@@ -1091,7 +1057,7 @@
                     dayButton.addEventListener('click', () => selectDate(dateStr));
                 }
                 
-                gridElement.appendChild(dayButton);
+                daysGrid.appendChild(dayButton);
             }
         }
 
@@ -1106,9 +1072,9 @@
             });
         }
 
-        // Animate month transition with carousel
+        // Animate month transition
         function animateMonthTransition(direction) {
-            const carousel = document.getElementById('calendarCarousel');
+            const daysGrid = document.getElementById('daysGrid');
             const monthTitle = document.getElementById('monthTitle');
             
             // Disable navigation during animation
@@ -1120,42 +1086,45 @@
             // Start fade out title
             monthTitle.classList.add('fade-out');
             
-            // Calculate new transform based on direction
-            let newTransform;
+            // Start slide animation
             if (direction === 'next') {
-                // Show next month (slide left)
-                newTransform = 'translateX(-66.67%)'; // Move to show next month
-                currentMonth.setMonth(currentMonth.getMonth() + 1);
+                daysGrid.classList.add('slide-left');
             } else {
-                // Show previous month (slide right)  
-                newTransform = 'translateX(0%)'; // Move to show prev month
-                currentMonth.setMonth(currentMonth.getMonth() - 1);
+                daysGrid.classList.add('slide-right');
             }
             
-            // Apply the transform
-            carousel.style.transform = newTransform;
-            
-            // After transition, reset carousel and update content
+            // After slide out completes, update content and slide in
             setTimeout(() => {
+                // Update month
+                if (direction === 'next') {
+                    currentMonth.setMonth(currentMonth.getMonth() + 1);
+                } else {
+                    currentMonth.setMonth(currentMonth.getMonth() - 1);
+                }
+                
                 // Update title
                 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                     'July', 'August', 'September', 'October', 'November', 'December'];
                 monthTitle.textContent = `${monthNames[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`;
                 
-                // Disable transition temporarily for instant reset
-                carousel.classList.add('no-transition');
+                // Reset grid position for slide in from opposite side
+                daysGrid.style.transition = 'none';
+                if (direction === 'next') {
+                    daysGrid.style.transform = 'translateX(100%)';
+                } else {
+                    daysGrid.style.transform = 'translateX(-100%)';
+                }
                 
-                // Reset carousel to center position
-                carousel.style.transform = 'translateX(-33.33%)';
-                
-                // Re-render calendar content with new month data
+                // Re-render calendar content
                 renderCalendarContent();
                 
-                // Force reflow to apply changes
-                carousel.offsetHeight;
+                // Force reflow then animate in
+                daysGrid.offsetHeight;
+                daysGrid.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                daysGrid.style.transform = 'translateX(0)';
                 
-                // Re-enable transition
-                carousel.classList.remove('no-transition');
+                // Remove animation classes
+                daysGrid.classList.remove('slide-left', 'slide-right');
                 
                 // Fade in title
                 setTimeout(() => {
@@ -1164,11 +1133,13 @@
                 
                 // Re-enable navigation
                 setTimeout(() => {
+                    daysGrid.style.transition = '';
+                    daysGrid.style.transform = '';
                     updateNavButtons();
                     prevButton.disabled = false;
                     nextButton.disabled = false;
                     updateNavButtons(); // Apply proper disabled states
-                }, 100);
+                }, 300);
             }, 300);
         }
 
@@ -1896,9 +1867,9 @@
 
         function initTouchHandlers() {
             const calendarWidget = document.querySelector('.calendar-widget');
-            const carousel = document.getElementById('calendarCarousel');
+            const daysGrid = document.getElementById('daysGrid');
             
-            if (!calendarWidget || !carousel) {
+            if (!calendarWidget || !daysGrid) {
                 console.error('Calendar elements not found for touch handlers');
                 return;
             }
@@ -1928,7 +1899,7 @@
                 currentTransform = 0;
                 
                 // Reset any existing transitions
-                carousel.style.transition = 'none';
+                daysGrid.style.transition = 'none';
             }, { passive: true });
             
             calendarWidget.addEventListener('touchmove', function(e) {
@@ -1946,30 +1917,28 @@
                         e.preventDefault();
                     }
                     
-                    // Calculate transform percentage based on finger movement
-                    const containerWidth = calendarWidget.offsetWidth;
-                    const dragPercent = (deltaX / containerWidth) * 33.33; // Convert to percentage of month width
+                    // Calculate drag resistance - more resistance as user drags further
+                    let transformX = deltaX;
+                    const maxDrag = calendarWidget.offsetWidth * 0.3; // Max 30% of container width
                     
-                    // Apply resistance when dragging beyond limits
-                    let finalDragPercent = dragPercent;
-                    const maxDrag = 10; // Max 10% drag beyond boundaries
+                    // Apply resistance curve
+                    if (Math.abs(transformX) > maxDrag) {
+                        const excess = Math.abs(transformX) - maxDrag;
+                        const resistedExcess = excess * 0.2; // 20% resistance for excess movement
+                        transformX = transformX > 0 ? maxDrag + resistedExcess : -(maxDrag + resistedExcess);
+                    }
                     
                     // Check navigation constraints
                     const prevButton = document.getElementById('prevMonth');
                     const nextButton = document.getElementById('nextMonth');
                     
-                    // Apply resistance for disabled directions
-                    if ((dragPercent > 0 && prevButton.disabled) || (dragPercent < 0 && nextButton.disabled)) {
-                        finalDragPercent = dragPercent * 0.1; // Strong resistance
-                    } else if (Math.abs(dragPercent) > maxDrag) {
-                        // Gentle resistance at boundaries
-                        const excess = Math.abs(dragPercent) - maxDrag;
-                        const resistedExcess = excess * 0.3;
-                        finalDragPercent = dragPercent > 0 ? maxDrag + resistedExcess : -(maxDrag + resistedExcess);
+                    // Prevent dragging in disabled directions with stronger resistance
+                    if ((transformX > 0 && prevButton.disabled) || (transformX < 0 && nextButton.disabled)) {
+                        transformX *= 0.1; // Strong resistance for disabled directions
                     }
                     
-                    const newTransform = -33.33 + finalDragPercent; // Start from center position
-                    carousel.style.transform = `translateX(${newTransform}%)`;
+                    currentTransform = transformX;
+                    daysGrid.style.transform = `translateX(${transformX}px)`;
                 }
             }, { passive: false });
             
@@ -1980,8 +1949,8 @@
                 const deltaX = touch.clientX - touchStartX;
                 const deltaY = touch.clientY - touchStartY;
                 
-                // Reset transition for smooth animation
-                carousel.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                // Reset transition for smooth snap back
+                daysGrid.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
                 
                 // Check if this was a swipe gesture (20% of screen width)
                 const swipeThreshold = getSwipeThreshold();
@@ -2000,11 +1969,11 @@
                         animateMonthTransition('next');
                     } else {
                         // Snap back to center if swipe wasn't valid
-                        carousel.style.transform = 'translateX(-33.33%)';
+                        daysGrid.style.transform = 'translateX(0)';
                     }
                 } else {
                     // Snap back to center if not a valid swipe
-                    carousel.style.transform = 'translateX(-33.33%)';
+                    daysGrid.style.transform = 'translateX(0)';
                 }
                 
                 // Reset state
@@ -2013,10 +1982,11 @@
                 isDragging = false;
                 currentTransform = 0;
                 
-                // Clear transition after animation
+                // Clear transform and transition after animation
                 setTimeout(() => {
                     if (!isDragging) { // Only clear if not currently dragging
-                        carousel.style.transition = '';
+                        daysGrid.style.transition = '';
+                        daysGrid.style.transform = '';
                     }
                 }, 300);
             }, { passive: false });
