@@ -2348,13 +2348,26 @@ function testSubmitFunction() {
   //   document.getElementById('input_101')?.value ||
   //   window.selectedAppointment ||   '');
 
-let appointmentDateTime = window.selectedAppointment;
+/* 1️⃣  Pull the raw value *********************************************/
+const raw_appointment_date_time =
+  document.getElementById('input_101')?.value?.trim() ||
+  window.selectedAppointment;
 
-// If it came from the hidden input, parse it
-if (typeof appointmentDateTime === 'string' && appointmentDateTime.trim().startsWith('{')) {
-  try { appointmentDateTime = JSON.parse(appointmentDateTime); }
-  catch (err) { console.error('Bad appointment JSON', err); }
+/* 2️⃣  If it’s JSON text, parse it ***********************************/
+let appointment_date_time = raw_appointment_date_time;
+
+if (typeof appointment_date_time === 'string') {
+  try {
+    appointment_date_time = JSON.parse(appointment_date_time);
+  } catch (e) {
+    console.warn('Bad appointment JSON', e);
+    // leave it as‑is (string) so you still capture something
+  }
 }
+
+/* 3️⃣  Verify the type before tracking ******************************/
+console.log('about to track →', typeof appointment_date_time, appointment_date_time);
+
 
 
   console.log('🗓️ appointment_date_time:', appointmentDateTime);
