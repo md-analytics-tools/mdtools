@@ -1362,7 +1362,22 @@
             const endTime = formatTime(slot.end);
             const date = formatDate(slot.start);
             
-            confirmationText.textContent = `${date} from ${startTime} to ${endTime}`;
+            // Get selected timezone and format it
+            const selectedTimezone = getSelectedTimezone();
+            const timezoneDisplayNames = {
+                'Hawaiʻi Time – US & Canada': 'Hawaii',
+                'Pacific Time – US & Canada': 'Pacific',
+                'Mountain Time – US & Canada': 'Mountain',
+                'Central Time – US & Canada': 'Central',
+                'Eastern Time – US & Canada': 'Eastern',
+                'Alaska Time – US & Canada': 'Alaska',
+                'Atlantic Time – Canada': 'Atlantic',
+                'Newfoundland Time – Canada': 'Newfoundland'
+            };
+            
+            const timezoneDisplay = timezoneDisplayNames[selectedTimezone] || 'Pacific';
+            
+            confirmationText.textContent = `${date} from ${startTime} to ${endTime} ${timezoneDisplay}`;
             
             confirmation.classList.add('show');
             
