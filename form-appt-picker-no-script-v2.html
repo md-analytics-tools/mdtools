@@ -76,6 +76,26 @@
             border: none;
         }
 
+        /* iOS Safari specific fixes for calendar alignment */
+        @supports (-webkit-touch-callout: none) {
+            .date-picker,
+            .calendar-widget,
+            .calendar-header,
+            .weekdays,
+            .days-grid {
+                margin-left: 0 !important;
+                padding-left: 0 !important;
+                transform: translateZ(0);
+                -webkit-transform: translateZ(0);
+            }
+            
+            .appointment-container {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+            }
+        }
+
         .date-picker h3 {
             color: #267a87;
             margin-bottom: 13px;
